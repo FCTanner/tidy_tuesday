@@ -121,4 +121,8 @@ plastics_long %>%
 * Normalize for participation per country?
 * Companies x Types of plastics?
 
+```{r}
+sessionInfo()
+```
+
 
