@@ -87,11 +87,15 @@ Data summary
 | num\_events    |          0 |           1.00 |   33.37 |   44.71 |    1 |    4 |   15 |   42 |    145 | ▇▃▁▁▂ |
 | volunteers     |        107 |           0.99 | 1117.65 | 1812.40 |    1 |  114 |  400 | 1416 |  31318 | ▇▁▁▁▁ |
 
-# Tidying format
+## Tidying format
 
-Missing data: - What sort of plastic is not always recorded, will stick
-to looking at grand\_total - Country seems to be missing quite often,
-will remove “EMPTY”
+Missing data:
+
+  - What sort of plastic is not always recorded, will stick to looking
+    at grand\_total
+  - Country seems to be missing quite often, will remove “EMPTY”
+
+<!-- end list -->
 
 ``` r
 plastics_long <- plastics %>%
@@ -152,7 +156,7 @@ plastics_long %>%
     ## 10 Korea                     2020         26
     ## # ... with 96 more rows
 
-# Most activity of BFFP in 2020
+## Most activity of BFFP in 2020
 
 ``` r
 plastics_long %>% 
@@ -191,9 +195,13 @@ plastics_long %>%
 ```
 
 ![](2021-01-26-Plastic-Pollution_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
-\# Has there been less reporting or less volunteering in 2020? Or has
-the participation changed that much? - Hard to tell - The change between
-the years is nonetheless interesting
+
+## Has there been less reporting or less volunteering in 2020? Or has the participation changed that much?
+
+  - Hard to tell
+  - The change between the years is nonetheless interesting
+
+<!-- end list -->
 
 ``` r
 plastics_long %>% 
@@ -213,11 +221,7 @@ plastics_long %>%
 
 ![](2021-01-26-Plastic-Pollution_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
-# Which company produced the most waste?
-
-  - Overall
-
-<!-- end list -->
+## Which company produced the most waste overall?
 
 ``` r
 plastics_long %>% 
@@ -226,7 +230,7 @@ plastics_long %>%
          year == "2019",
          parent_company %nin% c("Grand Total",
                                 "Unbranded",
-                                "Assorted")) %>% # Going through these iteratively
+                                "Assorted")) %>% # Going through these iteratively to remove irrelevant parent companies
   group_by(parent_company) %>% 
   summarise(total_per_company = sum(amount)) %>% 
   arrange(desc(total_per_company)) %>% 
@@ -239,5 +243,8 @@ plastics_long %>%
     ## `summarise()` ungrouping output (override with `.groups` argument)
 
 ![](2021-01-26-Plastic-Pollution_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
-\#\# Further analysis - Normalize for participation per country? -
-Companies X types of plastics? -
+
+## Further analysis
+
+  - Normalize for participation per country?
+  - Companies x Types of plastics?

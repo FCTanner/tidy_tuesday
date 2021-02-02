@@ -20,11 +20,12 @@ plastics <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/t
 skim(plastics)
 ```
 
-# Tidying format
+## Tidying format
 
 Missing data: 
-- What sort of plastic is not always recorded, will stick to looking at grand_total
-- Country seems to be missing quite often, will remove "EMPTY"
+
+* What sort of plastic is not always recorded, will stick to looking at grand_total
+* Country seems to be missing quite often, will remove "EMPTY"
 
 ```{r}
 plastics_long <- plastics %>%
@@ -40,10 +41,11 @@ plastics_long %>%
 
 ```
 ## Possible questions
-- Activity of BFFP per country?
-- Growth of activity over two years?
-- Which companies pollute most?
-- What sort of plastics?
+
+* Activity of BFFP per country?
+* Growth of activity over two years?
+* Which companies pollute most?
+* What sort of plastics?
 
 ```{r}
 plastics_long %>% 
@@ -52,7 +54,7 @@ plastics_long %>%
   arrange(desc(num_events))
 
 ```
-# Most activity of BFFP in 2020
+## Most activity of BFFP in 2020
 
 ```{r}
 
@@ -72,9 +74,11 @@ plastics_long %>%
   ggplot(aes(x = volunteers, y= country, fill = as.factor(year))) +
   geom_col(position = position_dodge2())
 ```
-# Has there been less reporting or less volunteering in 2020? Or has the participation changed that much?
-- Hard to tell
-- The change between the years is nonetheless interesting
+
+## Has there been less reporting or less volunteering in 2020? Or has the participation changed that much?
+
+* Hard to tell
+* The change between the years is nonetheless interesting
 
 ```{r}
 plastics_long %>% 
@@ -92,8 +96,8 @@ plastics_long %>%
   facet_wrap(~year, nrow = 1)
 ```
 
-# Which company produced the most waste?
-- Overall
+## Which company produced the most waste overall?
+
 ```{r}
 plastics_long %>% 
   mutate_at(vars(parent_company), function(x){gsub('[^ -~]', '', x)}) %>%  # removing non UTF-8 character that throw off summarise()
@@ -101,7 +105,7 @@ plastics_long %>%
          year == "2019",
          parent_company %nin% c("Grand Total",
                                 "Unbranded",
-                                "Assorted")) %>% # Going through these iteratively
+                                "Assorted")) %>% # Going through these iteratively to remove irrelevant parent companies
   group_by(parent_company) %>% 
   summarise(total_per_company = sum(amount)) %>% 
   arrange(desc(total_per_company)) %>% 
@@ -111,7 +115,10 @@ plastics_long %>%
   geom_col()
 
 ```
+
 ## Further analysis
-- Normalize for participation per country?
-- Companies X types of plastics?
-- 
+
+* Normalize for participation per country?
+* Companies x Types of plastics?
+
+
