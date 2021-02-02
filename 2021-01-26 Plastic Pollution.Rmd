@@ -1,0 +1,117 @@
+---
+title: "2021-01-26 	Plastic Pollution"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(skimr)
+library(ggplot2); theme_set(theme_bw())
+`%nin%` = Negate(`%in%`)
+```
+
+
+```{r}
+plastics <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-01-26/plastics.csv')
+skim(plastics)
+```
+
+# Tidying format
+
+Missing data: 
+- What sort of plastic is not always recorded, will stick to looking at grand_total
+- Country seems to be missing quite often, will remove "EMPTY"
+
+```{r}
+plastics_long <- plastics %>%
+  filter(country != "EMPTY") %>% 
+  pivot_longer(cols = c("hdpe", "ldpe", "o", "pet", "pp", "ps", "pvc", "grand_total"),
+               names_to = "type",
+               values_to= "amount") %>% 
+  select(-empty)
+
+plastics_long %>% 
+  count(parent_company) %>% 
+  arrange(desc(n))
+
+```
+## Possible questions
+- Activity of BFFP per country?
+- Growth of activity over two years?
+- Which companies pollute most?
+- What sort of plastics?
+
+```{r}
+plastics_long %>% 
+  select(country, year, num_events) %>% 
+  distinct() %>% 
+  arrange(desc(num_events))
+
+```
+# Most activity of BFFP in 2020
+
+```{r}
+
+plastics_long %>% 
+  group_by(country, year) 
+
+plastics_long %>% 
+  select(year, country, volunteers) %>% 
+  filter(country != "EMPTY") %>%
+  distinct() %>% 
+  group_by(country) %>% 
+  mutate(total_volunteers = sum(volunteers)) %>% 
+  ungroup %>% 
+  mutate(country = fct_reorder(country, total_volunteers)) %>%
+  arrange(desc(total_volunteers)) %>% 
+  head(25) %>% 
+  ggplot(aes(x = volunteers, y= country, fill = as.factor(year))) +
+  geom_col(position = position_dodge2())
+```
+# Has there been less reporting or less volunteering in 2020? Or has the participation changed that much?
+- Hard to tell
+- The change between the years is nonetheless interesting
+
+```{r}
+plastics_long %>% 
+  select(year, country, volunteers) %>% 
+  filter(country != "EMPTY") %>%
+  distinct() %>% 
+  group_by(country) %>% 
+  mutate(total_volunteers = sum(volunteers)) %>% 
+  ungroup %>% 
+  mutate(country = fct_reorder(country, total_volunteers)) %>%
+  arrange(desc(total_volunteers)) %>% 
+  head(50) %>% 
+  ggplot(aes(x = volunteers, y= country)) +
+  geom_col(position = position_dodge2()) +
+  facet_wrap(~year, nrow = 1)
+```
+
+# Which company produced the most waste?
+- Overall
+```{r}
+plastics_long %>% 
+  mutate_at(vars(parent_company), function(x){gsub('[^ -~]', '', x)}) %>%  # removing non UTF-8 character that throw off summarise()
+  filter(type == "grand_total", 
+         year == "2019",
+         parent_company %nin% c("Grand Total",
+                                "Unbranded",
+                                "Assorted")) %>% # Going through these iteratively
+  group_by(parent_company) %>% 
+  summarise(total_per_company = sum(amount)) %>% 
+  arrange(desc(total_per_company)) %>% 
+  head(20) %>% 
+  mutate(parent_company = fct_reorder(parent_company, total_per_company)) %>% 
+  ggplot(aes(x = total_per_company, y = parent_company)) +
+  geom_col()
+
+```
+## Further analysis
+- Normalize for participation per country?
+- Companies X types of plastics?
+- 
