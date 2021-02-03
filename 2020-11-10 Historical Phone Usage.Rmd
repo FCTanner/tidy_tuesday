@@ -1,0 +1,137 @@
+---
+title: "2020-11-10 Historical Phone Usage"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(skimr)
+library(ggplot2); theme_set(theme_bw())
+`%nin%` = Negate(`%in%`)
+```
+
+```{r}
+mobile <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-11-10/mobile.csv')
+landline <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-11-10/landline.csv')
+```
+
+## Explore data
+
+```{r}
+skim(mobile)
+mobile %>% filter(is.na(code))
+mobile %>% filter(entity == "Syrian Arab Republic")
+mobile %>% filter(is.na(total_pop))
+
+skim(landline)
+landline %>% filter(is.na(total_pop))
+```
+## Combine
+
+```{r}
+dat <- mobile %>% select(entity, year, mobile_subs) %>% left_join(landline) # selecting first because NAs are introduced when joining on total_pop and gdp_per_cap
+skim(dat)
+```
+
+## Potential questions
+
+* What is the relationship between mobile phone subs and landline subs?
+* Which countries were first to adopt mobile phone subs?
+* Where are the highest rates of change? Fast adoption of mobiles?
+* Expectation: Landline down, mobile up - Any examples that contradict that?
+
+## Exploratory plots
+
+* good old pairs()
+
+```{r}
+dat %>% select(total_pop, landline_subs, gdp_per_cap, mobile_subs) %>% 
+  pairs()
+```
+
+* Mobile and Landline subscriptions over time
+* The relationship looks similar over the continents, I expect there to be higher differences between the countries
+
+```{r}
+dat %>% 
+  pivot_longer(cols = c(landline_subs, mobile_subs), names_to = "Subscription", values_to = "SubsPer100") %>% 
+  filter(!is.na(continent)) %>% 
+  ggplot(aes(x= year, y = SubsPer100, color = Subscription)) +
+  geom_point(alpha = 0.1) +
+  facet_wrap(~continent) +
+  labs(title = "Mobile and Landline subscriptions over time", x = "Year", y = "Subscriptions per 100 inhabitants")
+  
+```
+
+* Early adopters?
+* There seems to be missing data for many years
+
+```{r}
+dat %>%
+    filter(mobile_subs > 10) %>% 
+  pivot_longer(cols = c(landline_subs, mobile_subs), names_to = "Subscription", values_to = "SubsPer100") %>% 
+  filter(!is.na(continent), year > 1990, year < 1997) %>% 
+  ggplot(aes(x= year, y = SubsPer100, color = Subscription)) +
+  geom_point(alpha = 0.5) +
+  facet_wrap(~entity) +
+  scale_x_continuous(limits = c(1990, 2000), breaks = c(1990, 1992, 1994, 1996, 1998 , 2000)) +
+  labs(title = "Early adopters of mobile subscriptions", x = "Year", y = "Subscriptions per 100 inhabitants")
+  
+```
+
+* At what time do mobile subscriptions overtake landline subscriptions?
+
+```{r}
+dat %>% 
+  filter(mobile_subs > landline_subs) %>% 
+  group_by(entity, continent) %>% 
+  summarise(infliction_year = min(year)) %>% 
+  ungroup() %>% 
+  count(infliction_year) %>% 
+  ggplot(aes(x = infliction_year, y = n )) +
+  geom_col() +
+  labs(title = "At what time do mobile subscriptions overtake landline subscriptions?",
+       x = "Year", y = "Number of countries")
+
+```
+
+* Which continents did adopt early or late?
+
+```{r}
+infliction <- dat %>% 
+  filter(mobile_subs > landline_subs) %>% 
+  group_by(entity, continent) %>% 
+  summarise(infliction_year = min(year))
+
+country_count <- infliction %>% 
+  ungroup() %>% 
+  count(infliction_year) 
+
+
+dat %>% 
+  left_join(infliction) %>% 
+  left_join(country_count) %>% 
+  select(entity, n, infliction_year, continent) %>% 
+  distinct() %>% 
+  ggplot(aes(x = infliction_year, fill = continent)) +
+  geom_bar(stat= "count") +
+  labs(title = "At what time do mobile subscriptions overtake landline subscriptions?",
+       x = "Year", y = "Number of countries")
+
+infliction %>%
+  filter(infliction_year > 2010 | infliction_year < 2000)
+
+```
+
+## Further analysis
+
+* What are the outlying countries? 
+* Surely Cambodia is a data entry mistake
+* Relation to GDP?
+* Look at overall adoption rather than infliction point
+
+
