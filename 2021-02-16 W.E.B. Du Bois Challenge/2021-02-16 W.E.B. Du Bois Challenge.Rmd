@@ -1,0 +1,90 @@
+---
+title: "2021-02-16 W.E.B. Du Bois Challenge"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+10 different challenges are available, challenge_04, challenge_08 and challenge_10 may be possible for me.
+
+
+```{r}
+library(tidyverse)
+library(skimr)
+library(extrafont)
+# font_import()
+loadfonts(device = "win")
+
+`%nin%` = Negate(`%in%`)
+
+```
+
+## challenge_04 Freed Slaves
+
+```{r}
+freed_slaves <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-02-16/freed_slaves.csv')
+
+skim(freed_slaves)
+```
+* 1800 is missing one percent, will add to category Slave based on original image
+* Second thoughts
+** This graph really is not that interesting - not much changes for 70 years, then all slaves are freed
+** Better approach would be using geom_smooth for either free or slave category and fill the background either green or black
+
+
+```{r}
+freed_slaves$Slave[freed_slaves$Year == 1800] <- 89
+font <- "Bookman Old Style"
+
+freed_slaves_long <- freed_slaves %>% 
+  pivot_longer(cols = c("Free", "Slave"), names_to= "Status", values_to = "Percentage")
+p <- freed_slaves_long %>% 
+  ggplot(aes(x = Year, y = Percentage, color = Status, fill = Status)) +
+  geom_col(width = 10) + 
+  # geom_col(aes(x = Year, y = 50), width = 0.0001, color = "black") + # Trying to add the light gridlines
+  scale_x_continuous(breaks = c(unique(freed_slaves$Year)), position= "top") + 
+  labs(title = "PROPORTION OF FREEMEN AND SLAVES AMONG AMERICAN NEGROES  .\n\n\nPROPORTION DES NÈGRES LIBRES ET DES ESCLAVES EN AMÉRIQUE  .\n\n", 
+       subtitle = "DONE BY ATLANTA UNIVERSITY .\n\n\n")+
+  theme(legend.position = "none",
+        axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.title.x = element_blank(),
+        plot.title = element_text(hjust = 0.5, family = font, size = 10.5),
+        plot.subtitle = element_text(hjust = 0.5, family = font, size = 8.5),
+        panel.border = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid = element_line(), 
+        panel.background = element_rect(fill = "#dccec2", color = "#dccec2"),
+        plot.background = element_rect(fill = "#dccec2", color = "#dccec2"),
+        axis.text.x=element_text(face = "bold", family = font, size =14, color = "#101010")) +
+  scale_fill_manual(values=c("#4e996f", "#101010")) +
+  scale_color_manual(values=c("#4e996f", "#101010")) +
+  annotate("text", label = "SCLAVES\nESCLAVES", x = 1828, y = 50, 
+           color = "#dccec2", family = font, size = 7) +
+  annotate("text", label = "FREE - LIBRE", x = 1828, y = 95, 
+           color = "#101010", family = font, size = 5.5) +
+  geom_text(data = freed_slaves_long %>%  filter(Year != 1870), 
+            aes(label = paste0(Percentage, "%"), y = 102-Percentage), 
+            color = "#101010", family = font) +
+  annotate("text", label = "100 %", x = 1870, y = 92, 
+           color = "#101010", family = font, size = 4)
+
+p
+
+```
+
+```{r}
+ggsave(p, filename = "challenge_04.png", units = "cm", width = 12, height = 16, limitsize = F, scale = 1.4)
+```
+
+
+
+```{r}
+sessionInfo()
+```
+
