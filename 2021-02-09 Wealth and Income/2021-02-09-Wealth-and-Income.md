@@ -257,7 +257,7 @@ income_distribution %>%
 <!-- end list -->
 
 ``` r
-income_distribution %>% 
+summary_plot <- income_distribution %>% 
   filter(race %in% c("Black Alone", "White Alone, Not Hispanic", "Hispanic (Any Race)", "Asian Alone")) %>%
   mutate(income_bracket = fct_relevel(income_bracket, rev(correct_order_income_bracket))) %>% 
   ggplot(aes(x = year, y = income_distribution, color = income_bracket, fill = income_bracket)) +
@@ -270,9 +270,15 @@ income_distribution %>%
        y = "Income distribution",
        color= "Income bracket",
        fill = "Income bracket")
+
+summary_plot
 ```
 
 ![](2021-02-09-Wealth-and-Income_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+
+``` r
+ggsave(summary_plot, filename = "US household income per race.png", units = "cm", width = 14, height = 10, limitsize = F, scale = 1)
+```
 
 ``` r
 sessionInfo()
