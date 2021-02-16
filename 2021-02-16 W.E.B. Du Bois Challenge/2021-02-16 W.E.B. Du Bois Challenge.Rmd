@@ -76,7 +76,7 @@ p <- freed_slaves_long %>%
   theme_challenge_04 +
   scale_fill_manual(values=c("#4e996f", "#101010")) +
   scale_color_manual(values=c("#4e996f", "#101010")) +
-  annotate("text", label = "SCLAVES\nESCLAVES", x = 1828, y = 50, 
+  annotate("text", label = "SLAVES\nESCLAVES", x = 1828, y = 50, 
            color = "#dccec2", family = font, size = 7) +
   annotate("text", label = "FREE - LIBRE", x = 1828, y = 95, 
            color = "#101010", family = font, size = 5.5) +
@@ -95,18 +95,18 @@ p
 * Better approach would be using geom_smooth for either free or slave category and fill the background either green or black
 
 ```{r fig2, fig.height = 10, fig.width = 8, fig.align = "center"}
-p2 <- freed_slaves %>% 
-  ggplot(aes(x = Year, y = Slave)) +
+p2 <- ggplot(data = freed_slaves, aes(x = Year, y = Slave)) +
   geom_rect(aes(xmin = 1790, xmax = 1870, ymin = 1, ymax = 100), color = "#4e996f", fill = "#4e996f") +
-  geom_ribbon(aes(ymin = 0,ymax = predict(loess(Slave ~ Year, span = 0.4))),
-                alpha = 1,fill = "#101010") +
+  geom_ribbon( aes(ymin = 0,ymax = predict(loess(Slave ~ Year, span = 0.4))),
+               alpha = 1,fill = "#101010") +
+  geom_linerange(data = freed_slaves %>%  filter(Year %nin% c(1790, 1870)),aes(x = Year, ymin = predict(loess(Slave ~ Year, span = 0.4)) +3, ymax = 100), color ="#101010", fill = "#101010", width = 0.1) +
   scale_x_continuous(breaks = c(unique(freed_slaves$Year)), limits = c(1790, 1870), position= "top") + 
   labs(title = "PROPORTION OF FREEMEN AND SLAVES AMONG AMERICAN NEGROES  .\n\n\nPROPORTION DES NÈGRES LIBRES ET DES ESCLAVES EN AMÉRIQUE  .\n\n", 
        subtitle = "DONE BY ATLANTA UNIVERSITY .\n\n\n")+
   theme_challenge_04 +
-  annotate("text", label = "SCLAVES\nESCLAVES", x = 1828, y = 50, 
+  annotate("text", label = "SLAVES\nESCLAVES", x = 1830, y = 55, 
            color = "#dccec2", family = font, size = 7.5) +
-  annotate("text", label = "FREE - LIBRE", x = 1828, y = 95, 
+  annotate("text", label = "FREE - LIBRE", x = 1830, y = 97, 
            color = "#101010", family = font, size = 5.5) +
   geom_text(data = freed_slaves_long %>%  filter(Year %nin% c(1790, 1870)),
             aes(label = paste0(Percentage, "%"), y = 102-Percentage),
@@ -132,4 +132,21 @@ ggsave(p2, filename = "challenge_04.png", units = "cm", width = 12, height = 16,
 ```{r}
 sessionInfo()
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
