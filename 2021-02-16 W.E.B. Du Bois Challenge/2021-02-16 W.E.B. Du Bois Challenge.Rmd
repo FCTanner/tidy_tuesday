@@ -8,7 +8,7 @@ output: github_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-10 different challenges are available, challenge_04, challenge_08 and challenge_10 may be possible for me.
+* 10 different challenges are available, challenge_04, challenge_08 and challenge_10 may be possible for me.
 
 
 ```{r}
@@ -44,7 +44,7 @@ freed_slaves_long <- freed_slaves %>%
 ```
 
 
-## Building theme
+### Building theme
 
 ```{r}
 theme_challenge_04 <- theme(legend.position = "none",
@@ -90,8 +90,9 @@ p
 ```
 
 
-* Second thoughts
-** Better approach would be using geom_smooth for either free or slave category and fill the background either green or black
+### Second thoughts
+
+* Better approach would be using geom_smooth for either free or slave category and fill the background either green or black
 
 ```{r fig2, fig.height = 10, fig.width = 8, fig.align = "center"}
 p2 <- freed_slaves %>% 
@@ -120,7 +121,9 @@ p2 <- freed_slaves %>%
 p2
 ```
 
-
+### Notes
+* Needs better font
+* x-axis label should be moved down
 
 ```{r}
 ggsave(p2, filename = "challenge_04.png", units = "cm", width = 12, height = 16, limitsize = F, scale = 1.4)
