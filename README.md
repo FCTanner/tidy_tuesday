@@ -6,8 +6,7 @@ This repo contains selected Tidy Tuesday analyses. Folders include original scri
 
 ## 2021-02-23 Employment and Earnings
 
-Average ratio of gender and race in minor occupations, averaged over all industries from 2015-2020
-
+Average ratio of gender and race in minor occupations, averaged over all industries from 2015-2020  
 [Code](https://github.com/FCTanner/tidy_tuesday/blob/main/2021-02-23%20Employment%20and%20Earnings/2021-02-23-Employment-and-Earnings.md)
 
 ![alt text](https://github.com/FCTanner/tidy_tuesday/blob/main/2021-02-23%20Employment%20and%20Earnings/p_employed_minor_occ_summary.png)
@@ -16,7 +15,8 @@ Average ratio of gender and race in minor occupations, averaged over all industr
 
 ## 2020-02-16 W.E.B. Du Bois Challenge
 
-Remaking a plot for the #DuBoisChallenge challenge_04 [Code](https://github.com/FCTanner/tidy_tuesday/blob/main/2021-02-16%20W.E.B.%20Du%20Bois%20Challenge/2021-02-16-W.E.B.-Du-Bois-Challenge.md)
+Remaking a plot for the #DuBoisChallenge challenge_04  
+[Code](https://github.com/FCTanner/tidy_tuesday/blob/main/2021-02-16%20W.E.B.%20Du%20Bois%20Challenge/2021-02-16-W.E.B.-Du-Bois-Challenge.md)
 
 ![alt text](https://github.com/FCTanner/tidy_tuesday/blob/main/2021-02-16%20W.E.B.%20Du%20Bois%20Challenge/challenge_04.png)
 
