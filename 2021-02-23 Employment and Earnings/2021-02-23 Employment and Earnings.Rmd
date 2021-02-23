@@ -1,0 +1,232 @@
+---
+title: "2021-02-23 Employment and Earnings"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+.libPaths("C:/R-packages2/")
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r}
+library(tidyverse)
+library(skimr)
+library(ggsci)
+theme_set(theme_bw())
+`%nin%` = Negate(`%in%`)
+```
+
+
+```{r}
+employed <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-02-23/employed.csv')
+earn <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-02-23/earn.csv')
+
+```
+## First look
+
+* Will focus on 'employed' dataset
+* Possible questions:
+  * What are womens main industries per year (per race)? 
+  * What are mens main industries per year (per race)?
+
+```{r}
+skim(earn)
+skim(employed)
+```
+
+## 'Employed' exploratory
+
+* If 'industry' is used, a couple of things probably need to be fixed:
+  * remove NA, fix parsing error for 'mining, quarrying...'
+  * Combine or remove categories that count numbers twice
+
+
+
+```{r}
+employed %>% 
+  count(industry) %>% 
+  arrange(n)
+```
+
+```{r}
+employed %>% 
+  count(minor_occupation) %>% 
+  arrange(n)
+```
+* that might mean that it is not possible to answer questions per race per gender
+* maybe just analyze per race instead?
+
+```{r}
+employed %>% 
+  count(race_gender) %>% 
+  arrange(n)
+```
+
+### Data prep
+
+* Fixing parsing errors
+* pivot_wider for easy ratio calculations
+
+
+```{r}
+employed_clean <- employed
+employed_clean$minor_occupation[employed_clean$minor_occupation == "Manage-ment, business, and financial operations occupations"] <- 
+  "Management, business, and financial operations occupations"
+
+employed_clean$industry[employed_clean$industry == "Mining, quarrying, and\r\noil and gas extraction"] <- 
+  "Mining, quarrying, and oil and gas extraction"
+
+employed_wide <- employed_clean  %>% 
+  pivot_wider(id_cols = c(year, minor_occupation, major_occupation, industry),  names_from = race_gender, values_from = employ_n) %>% 
+  mutate(r_asian = Asian/TOTAL, 
+         r_black_or_afram = `Black or African American`/TOTAL, 
+         r_white = White/TOTAL,
+         r_male = Men/TOTAL, 
+         r_female = Women/TOTAL)
+
+
+```
+
+* Is it possible to find out about minor occupation over all industries? 
+  * Ideally, this should be normalized for the total size of the industries
+
+```{r}
+per_minor_occ <- employed_wide %>% 
+  group_by(year, minor_occupation) %>% 
+  summarize(mean_r_white = mean(r_white, na.rm = T), 
+            mean_r_asian = mean(r_asian, na.rm = T),
+            mean_r_boaa = mean(r_black_or_afram, na.rm = T),
+            mean_r_male = mean(r_male, na.rm =T),
+            mean_r_female = mean(r_female, na.rm = T)) %>% 
+  pivot_longer(cols = c(-year, -minor_occupation), names_to = "ratio")
+
+```
+
+### 'employed' graphs
+
+* Graph of ratio of race per minor_occupation in 2015
+* there is missing data (other category for race?)  + no striking differences
+  * the only other categories for race_gender in this dataset are "Men", "Women", "Total"
+
+```{r}
+per_minor_occ %>% 
+  filter(year == 2015, ratio %in% c("mean_r_asian", "mean_r_white", "mean_r_boaa")) %>% 
+  ggplot(aes(x = value, y = minor_occupation, color = ratio, fill = ratio)) +
+  geom_col()
+```
+
+
+* Graph of ratio of gender per minor_occupation in 2015
+  * Some more striking differences!
+
+
+```{r}
+per_minor_occ %>% 
+  filter(year == 2015, ratio %in% c("mean_r_female", "mean_r_male")) %>% 
+  ggplot(aes(x = value, y = minor_occupation, color = ratio, fill = ratio)) +
+  geom_col()
+```
+
+* Now to expand this graph over the years
+  * the ratios of men and women do not add up to 1 but there are no other gender categories
+
+
+```{r}
+per_minor_occ %>% 
+  filter(ratio %in% c("mean_r_female", "mean_r_male")) %>%
+  ggplot(aes(x = year, y = value, color = ratio, fill = ratio)) +
+  geom_col() +
+  facet_wrap(~minor_occupation)+ 
+  labs(title = "Ratio of gender in minor occupations, averaged over all industries") +
+  theme(legend.position = "bottom")
+```
+
+### Big summary plot
+
+* It does not really need the resolution over time, nothing drastic happens
+  * take average over last 5 years 
+
+```{r}
+per_minor_occ$category <- "Race"
+per_minor_occ$category[per_minor_occ$ratio == "mean_r_female" | per_minor_occ$ratio == "mean_r_male" ] <- "Gender"
+
+per_minor_occ %>% 
+  ggplot(aes(x = year, y = value, color = ratio, fill = ratio)) +
+  geom_line() +
+  facet_grid(category~minor_occupation)+ 
+  labs(title = "Ratio of gender in minor occupations, averaged over all industries") +
+  theme(legend.position = "bottom")
+```
+
+* It does not really need the resolution over time, nothing drastic happens
+  * take average over last 5 years 
+  * Rename subgroups
+* Sort y-axis alphabetically
+
+  
+
+```{r}
+per_minor_occ$category <- "Race"
+per_minor_occ$category[per_minor_occ$ratio == "mean_r_female" | per_minor_occ$ratio == "mean_r_male" ] <- "Gender"
+
+per_minor_occ$subgroup[per_minor_occ$ratio == "mean_r_female"] <- "Women"
+per_minor_occ$subgroup[per_minor_occ$ratio == "mean_r_male"] <- "Men"
+per_minor_occ$subgroup[per_minor_occ$ratio == "mean_r_asian"] <- "Asian"
+per_minor_occ$subgroup[per_minor_occ$ratio == "mean_r_boaa"] <- "Black or African American"
+per_minor_occ$subgroup[per_minor_occ$ratio == "mean_r_white"] <- "White"
+
+p_employed_minor_occ_summary <- per_minor_occ %>% 
+  group_by(minor_occupation, ratio, category, subgroup) %>%
+  mutate(minor_occupation = str_remove(minor_occupation, " occupations")) %>% 
+  summarize(avg_ratio = mean(value)) %>% 
+  ggplot(aes(x = avg_ratio, y = fct_rev(minor_occupation), color = subgroup, fill = subgroup)) +
+  geom_col(width = 0.7) +
+  facet_wrap(~category)+ 
+  labs(title = "Ratio of race and gender in minor occupations",
+       subtitle ="Averaged over all industries from 2015-2020", 
+       color = NULL, 
+       fill = NULL,
+       y = NULL,
+       x = "Ratio") +
+  theme(legend.position = "bottom",
+        axis.ticks.y = element_blank()) +
+  scale_fill_jco() +
+  scale_color_jco()
+
+p_employed_minor_occ_summary 
+```
+
+
+```{r}
+ggsave(p_employed_minor_occ_summary, filename = "p_employed_minor_occ_summary.png", units = "cm", width = 14, height = 10, limitsize = F, scale = 1.4)
+```
+
+## Thoughts
+
+* Deal with missing data
+* Should add importance of the minor occupations (how many people overall work in these minor occupations)
+
+
+```{r}
+sessionInfo()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
