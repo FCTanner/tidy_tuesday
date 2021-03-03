@@ -1,0 +1,137 @@
+---
+title: "2021-03-02 SuperBowl Adss"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+.libPaths("C:/R-packages2/")
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r}
+library(tidyverse)
+library(skimr)
+library(ggsci)
+theme_set(theme_bw())
+`%nin%` = Negate(`%in%`)
+```
+
+## First look
+
+* Potential questions
+  * How did the themes of the adds change between 2000 and 2020?
+  * Predict youtube metrics with brand and themes?
+
+```{r}
+youtube <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-03-02/youtube.csv')
+skim(youtube)
+```
+
+## Exploratory analysis 
+  
+```{r}
+youtube %>%  
+  count(brand) %>% 
+  arrange(desc(n))
+```
+
+* There are only 10 brands represented
+
+
+```{r}
+youtube %>%  
+  count(year) %>%
+  arrange(year)
+```
+
+
+* The amount of ads varies across years
+
+### Calculating the frequency of themes used in every year and renaming themes
+
+```{r}
+themes_across_years <- youtube %>% 
+  left_join(youtube %>% count(year)) %>% 
+  rename(total_per_year = n) %>% 
+  group_by(year) %>% 
+  summarise(across(.cols = c(funny, patriotic, danger, use_sex, animals, celebrity), .fns= mean)) %>% 
+  pivot_longer(cols = -year, names_to = "theme", values_to = "freq")
+
+themes_across_years$theme[themes_across_years$theme == "funny"] <- "Contains humor"
+themes_across_years$theme[themes_across_years$theme == "patriotic"] <- " 	Patriotic"
+themes_across_years$theme[themes_across_years$theme == "danger"] <- "Contains danger"
+themes_across_years$theme[themes_across_years$theme == "use_sex"] <- "Uses sexuality"
+themes_across_years$theme[themes_across_years$theme == "animals"] <- "Contains animals"
+themes_across_years$theme[themes_across_years$theme == "celebrity"] <- "Contains celebrity"
+
+```
+
+### Graphing frequency
+
+```{r}
+themes_across_years %>% 
+  ggplot(aes(x= year, y= freq, color = theme, group = theme)) +
+  geom_line() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+* Are superbowl ads getting more family friendly?
+  * Picking only the themes that seem to change
+  
+
+```{r}
+p <- themes_across_years %>% 
+  filter(theme %nin% c("Contains animals", "Contains danger")) %>% 
+  ggplot(aes(x= year, y= freq, color = theme, group = theme)) +
+  stat_smooth(method="lm", fill=NA,
+                formula=y ~ poly(x, 3, raw=TRUE)) +
+  geom_point(alpha = 0.5, size = 3) +
+  scale_color_jco() +
+  scale_y_continuous(labels = scales::percent, breaks = c(0, 0.25, 0.5, 0.75, 1), limits = c(0,1))+
+  labs(x = NULL, y = NULL, title = "Are superbowl ads getting more family-friendly?",
+       caption= "Smoothed lines represent third degree polynomial") +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        legend.position = "none") +
+  annotate("text", x = 2007, y = 0.9, label= "Contains humor") +
+  annotate("text", x = 2019.5, y = 0.72, label= "Contains\ncelebrity") +
+  annotate("text", x = 2005, y = 0.42, label= "Uses sexuality") +
+  annotate("text", x = 2008.5, y = 0.07, label = "Patriotic") 
+
+p
+```
+
+## Thoughts
+
+* What are best practices when including smoothing lines in plots?
+  * How much should be explained? 
+  * Is it obscuring data / telling a story that is not there?
+* Still to explore
+  * What is influential for youtube metrics? 
+  
+  
+
+```{r}
+sessionInfo()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,44 @@
+---
+title: "2021-02-23 Employment and Earnings"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+.libPaths("C:/R-packages2/")
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r}
+library(tidyverse)
+library(skimr)
+library(ggsci)
+theme_set(theme_bw())
+`%nin%` = Negate(`%in%`)
+```
+
+
+
+
+```{r}
+sessionInfo()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
