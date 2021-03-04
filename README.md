@@ -4,6 +4,15 @@ This repo contains selected Tidy Tuesday analyses. Folders include original scri
 
 ---
 
+## 2021-03-02 SuperBowl Ads
+
+
+[Code](https://github.com/FCTanner/tidy_tuesday/blob/main/2021-03-02%20SuperBowl%20Ads/2021-03-02-SuperBowl-Ads.md)
+
+![alt text](https://github.com/FCTanner/tidy_tuesday/blob/main/2021-03-02%20SuperBowl%20Ads/doritos%20views.png)
+
+--- 
+
 ## 2021-02-23 Employment and Earnings
 
 Average ratio of gender and race in minor occupations, averaged over all industries from 2015-2020  
