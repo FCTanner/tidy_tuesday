@@ -1,4 +1,4 @@
-2021-03-02 SuperBowl Adss
+2021-03-02 SuperBowl Ads
 ================
 
 ``` r
@@ -19,6 +19,26 @@ library(tidyverse)
 ``` r
 library(skimr)
 library(ggsci)
+library(tidymodels)
+```
+
+    ## -- Attaching packages -------------------------------------- tidymodels 0.1.2 --
+
+    ## v broom     0.7.3      v recipes   0.1.15
+    ## v dials     0.0.9      v rsample   0.0.8 
+    ## v infer     0.5.4      v tune      0.1.2 
+    ## v modeldata 0.1.0      v workflows 0.2.1 
+    ## v parsnip   0.1.4      v yardstick 0.0.7
+
+    ## -- Conflicts ----------------------------------------- tidymodels_conflicts() --
+    ## x scales::discard() masks purrr::discard()
+    ## x dplyr::filter()   masks stats::filter()
+    ## x recipes::fixed()  masks stringr::fixed()
+    ## x dplyr::lag()      masks stats::lag()
+    ## x yardstick::spec() masks readr::spec()
+    ## x recipes::step()   masks stats::step()
+
+``` r
 theme_set(theme_bw())
 `%nin%` = Negate(`%in%`)
 ```
@@ -27,6 +47,7 @@ theme_set(theme_bw())
 
   - Potential questions
       - How did the themes of the adds change between 2000 and 2020?
+      - Beer preferences of superbowl watchers?
       - Predict youtube metrics with brand and themes?
 
 <!-- end list -->
@@ -122,7 +143,7 @@ Data summary
 | :------------- | ---------: | -------------: | :------------------ | :------------------ | :------------------ | --------: |
 | published\_at  |         16 |           0.94 | 2006-02-06 10:02:36 | 2021-01-27 13:11:29 | 2013-01-31 09:13:55 |       227 |
 
-## Exploratory analysis
+## Exploratory analysis for themes
 
 ``` r
 youtube %>%  
@@ -145,6 +166,7 @@ youtube %>%
     ## 10 Toyota       11
 
   - There are only 10 brands represented
+  - Light beers are taking off
 
 <!-- end list -->
 
@@ -250,13 +272,348 @@ p
 
 ![](2021-03-02-SuperBowl-Ads_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
-## Thoughts
+### Thoughts theme trend plot
 
   - What are best practices when including smoothing lines in plots?
       - How much should be explained?
       - Is it obscuring data / telling a story that is not there?
-  - Still to explore
-      - What is influential for youtube metrics?
+
+## Exploratory analysis for beer preferences
+
+  - Are people drinking more light beers? Does not seem so, mid 2000s
+    was more popular
+      - The higher total of Bud Light ads comes from that time period
+
+<!-- end list -->
+
+``` r
+youtube %>%  
+  filter(brand %in% c("Budweiser", "Bud Light")) %>%
+  group_by(year) %>% 
+  count(brand) %>% 
+  ggplot(aes(x = year, y = n, color = brand)) +
+  geom_point() +
+  geom_smooth()
+```
+
+    ## `geom_smooth()` using method = 'loess' and formula 'y ~ x'
+
+![](2021-03-02-SuperBowl-Ads_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+
+## Exploratory analysis for youtube metrics
+
+  - Metrics: views, likes, dislikes, number comments, favorite count
+      - Views is probably most important for ads…
+      - have to log - transform view\_count
+      - Some companies have more than one ad per year, account for that
+
+<!-- end list -->
+
+``` r
+youtube %>% 
+  select(year, brand, view_count) %>% 
+  arrange(desc(view_count))
+```
+
+    ## # A tibble: 247 x 3
+    ##     year brand     view_count
+    ##    <dbl> <chr>          <dbl>
+    ##  1  2012 Doritos    176373378
+    ##  2  2017 Budweiser   28785122
+    ##  3  2020 NFL         26727063
+    ##  4  2012 Coca-Cola   22849816
+    ##  5  2014 Doritos      7952240
+    ##  6  2019 Bud Light    7658201
+    ##  7  2016 Coca-Cola    6428474
+    ##  8  2016 NFL          4921309
+    ##  9  2000 Budweiser    3624622
+    ## 10  2018 NFL          3464175
+    ## # ... with 237 more rows
+
+``` r
+youtube %>% 
+  filter(year > 2014) %>% 
+  ggplot(aes(x= log(view_count), y = brand)) +
+  geom_col() +
+  facet_wrap(~year)
+```
+
+    ## Warning: Removed 6 rows containing missing values (position_stack).
+
+![](2021-03-02-SuperBowl-Ads_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+
+``` r
+hist(log(youtube$view_count))
+```
+
+![](2021-03-02-SuperBowl-Ads_files/figure-gfm/unnamed-chunk-9-2.png)<!-- -->
+\#\# Predictive modeling for youtube metrics
+
+### Preprocessing
+
+``` r
+mod_dat <- youtube %>% 
+  select(-superbowl_ads_dot_com_url, - youtube_url, -kind, -etag, -published_at, - description, - thumbnail, -channel_title, - category_id)
+```
+
+### Test-train split
+
+``` r
+set.seed(123)
+
+split <- mod_dat %>%
+  filter(!is.na(view_count)) %>% 
+  initial_split(p= 0.75, strata = view_count)
+train_dat <- training(split)
+test_dat <- testing(split)
+
+plot(log(train_dat$view_count))
+```
+
+![](2021-03-02-SuperBowl-Ads_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+
+``` r
+plot(log(test_dat$view_count))
+```
+
+![](2021-03-02-SuperBowl-Ads_files/figure-gfm/unnamed-chunk-11-2.png)<!-- -->
+
+### Recipe
+
+``` r
+football_recipe <- recipe((view_count ~.), 
+                          data = train_dat %>% 
+                            select(-like_count, -dislike_count, -favorite_count, -comment_count)) %>% 
+  update_role(c(year, id, title), new_role = "ID") %>% 
+  step_log(all_outcomes(), skip = TRUE) %>%
+  step_dummy(brand) 
+
+football_prep <- football_recipe %>% prep()
+football_prep
+```
+
+    ## Data Recipe
+    ## 
+    ## Inputs:
+    ## 
+    ##       role #variables
+    ##         ID          3
+    ##    outcome          1
+    ##  predictor          8
+    ## 
+    ## Training data contained 175 data points and no missing data.
+    ## 
+    ## Operations:
+    ## 
+    ## Log transformation on view_count [trained]
+    ## Dummy variables from brand [trained]
+
+### Specify models
+
+``` r
+rf_spec <- rand_forest() %>% 
+  set_engine("ranger",importance = "permutation") %>% 
+  set_mode("regression")
+
+svm_spec <- svm_rbf() %>% 
+  set_engine("kernlab") %>% 
+  set_mode("regression") %>% 
+  translate()
+```
+
+### Workflow
+
+``` r
+rf_workflow <- workflow() %>% 
+  add_model(rf_spec) %>% 
+  add_recipe(football_recipe)
+
+svm_workflow <- workflow() %>% 
+  add_model(svm_spec) %>% 
+  add_recipe(football_recipe)
+```
+
+### Fit model
+
+``` r
+rf_fit <- 
+  rf_workflow %>% 
+  fit(data = train_dat)
+
+svm_fit <-
+  svm_workflow %>% 
+  fit(data = train_dat)
+```
+
+### Predict
+
+``` r
+results_test <- rf_fit %>%
+  predict(new_data = test_dat) %>%
+  mutate(truth = log(test_dat$view_count),
+    model = "Random forests") %>% 
+  bind_rows(svm_fit %>% 
+              predict(new_data = test_dat) %>% 
+              mutate(truth = log(test_dat$view_count),
+    model = "SVM"))
+
+
+results_train <- rf_fit %>%
+  predict(new_data = train_dat) %>%
+  mutate(truth = log(train_dat$view_count),
+    model = "Random forests") %>% 
+  bind_rows(svm_fit %>% 
+              predict(new_data = train_dat) %>% 
+              mutate(truth = log(train_dat$view_count),
+    model = "SVM"))
+```
+
+### Evaluate
+
+``` r
+results_test %>% 
+  group_by(model) %>% 
+  rsq(truth = truth, estimate = .pred)
+```
+
+    ## # A tibble: 2 x 4
+    ##   model          .metric .estimator .estimate
+    ##   <chr>          <chr>   <chr>          <dbl>
+    ## 1 Random forests rsq     standard      0.118 
+    ## 2 SVM            rsq     standard      0.0832
+
+``` r
+results_train %>% 
+  group_by(model) %>% 
+  rsq(truth = truth, estimate = .pred)
+```
+
+    ## # A tibble: 2 x 4
+    ##   model          .metric .estimator .estimate
+    ##   <chr>          <chr>   <chr>          <dbl>
+    ## 1 Random forests rsq     standard       0.550
+    ## 2 SVM            rsq     standard       0.399
+
+### Plots
+
+``` r
+p <- results_test %>% 
+  mutate(train = "Test set") %>% 
+  bind_rows(results_train %>% 
+              mutate(train = "Training set")) %>% 
+  ggplot(aes(x = truth ,y = .pred, color = model)) +
+  geom_abline(lty = 2, color = "gray80", size = 1.3) +
+  geom_point(alpha = 0.8) +
+  facet_grid(model~train) +
+  labs(
+    x = "True log view count",
+    y = "Predicted log view count",
+    color = "Type of model") +
+  scale_color_jco()
+
+
+p
+```
+
+![](2021-03-02-SuperBowl-Ads_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+
+### Variable importance?
+
+  - Doritos does well
+
+<!-- end list -->
+
+``` r
+library(vip)
+```
+
+    ## 
+    ## Attaching package: 'vip'
+
+    ## The following object is masked from 'package:utils':
+    ## 
+    ##     vi
+
+``` r
+rf_fit %>%
+  pull_workflow_fit() %>%
+  vi()
+```
+
+    ## # A tibble: 16 x 2
+    ##    Variable             Importance
+    ##    <chr>                     <dbl>
+    ##  1 danger                   0.675 
+    ##  2 funny                    0.671 
+    ##  3 animals                  0.436 
+    ##  4 celebrity                0.427 
+    ##  5 brand_Hynudai            0.243 
+    ##  6 brand_Doritos            0.209 
+    ##  7 brand_NFL                0.205 
+    ##  8 brand_Pepsi              0.185 
+    ##  9 brand_Coca.Cola          0.130 
+    ## 10 brand_Kia                0.0957
+    ## 11 brand_Budweiser          0.0620
+    ## 12 use_sex                  0.0472
+    ## 13 show_product_quickly    -0.0171
+    ## 14 brand_Toyota            -0.0235
+    ## 15 patriotic               -0.0645
+    ## 16 brand_E.Trade           -0.125
+
+``` r
+youtube %>% 
+  ggplot(aes(x = as.factor(year), y = log(view_count), color = funny, fill = funny)) +
+  geom_bar(stat = "summary", fun.y = "mean", position = "dodge")
+```
+
+    ## Warning: Ignoring unknown parameters: fun.y
+
+    ## Warning: Removed 16 rows containing non-finite values (stat_summary).
+
+    ## No summary function supplied, defaulting to `mean_se()`
+
+![](2021-03-02-SuperBowl-Ads_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
+
+``` r
+p <- ggplot() +
+  geom_point(data = youtube %>% filter(brand != "Doritos"),aes(x= year , y = view_count), alpha = 0.5) +
+  annotate("segment", x = 2010.3, xend= 2012, y = 100000000, yend = 176373378) +
+  geom_point(data = youtube %>% filter(brand == "Doritos"), 
+             aes(x= year , y = view_count), color = "black", fill = "orange", shape = 24, size = 3) + 
+  scale_y_log10(labels = comma) +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        legend.position = "none") +
+  labs(x= NULL, y = "Views", title = "Doritos Superbowl commercials are successful on Youtube", 
+       caption= "Black dots = other brands") +
+  annotate("text", x = 2007, y= 100000000, label = "Doritos Sling Baby (2012)\nTotal views: 176 million") 
+
+p
+```
+
+    ## Warning: Removed 14 rows containing missing values (geom_point).
+
+    ## Warning: Removed 2 rows containing missing values (geom_point).
+
+![](2021-03-02-SuperBowl-Ads_files/figure-gfm/unnamed-chunk-20-2.png)<!-- -->
+
+``` r
+ggsave(p, filename = "doritos views.png", units = "cm", width = 14, height = 10, limitsize = F, scale = 1.4)
+```
+
+    ## Warning: Removed 14 rows containing missing values (geom_point).
+
+    ## Warning: Removed 2 rows containing missing values (geom_point).
+
+### Thoughts
+
+  - The graph should be interactive (display brand, view\_count and
+    youtube url)
+  - Keep going with modeling
+      - So far, I only used it to determine important predictors for
+        view\_count
+  - Make sure variable importance from random forests is stable
 
 <!-- end list -->
 
@@ -281,24 +638,33 @@ sessionInfo()
     ## [1] stats     graphics  grDevices utils     datasets  methods   base     
     ## 
     ## other attached packages:
-    ##  [1] ggsci_2.9       skimr_2.1.2     forcats_0.5.0   stringr_1.4.0  
-    ##  [5] dplyr_1.0.2     purrr_0.3.4     readr_1.4.0     tidyr_1.1.2    
-    ##  [9] tibble_3.0.4    ggplot2_3.3.3   tidyverse_1.3.0
+    ##  [1] vip_0.3.2        yardstick_0.0.7  workflows_0.2.1  tune_0.1.2      
+    ##  [5] rsample_0.0.8    recipes_0.1.15   parsnip_0.1.4    modeldata_0.1.0 
+    ##  [9] infer_0.5.4      dials_0.0.9      scales_1.1.1     broom_0.7.3     
+    ## [13] tidymodels_0.1.2 ggsci_2.9        skimr_2.1.2      forcats_0.5.0   
+    ## [17] stringr_1.4.0    dplyr_1.0.2      purrr_0.3.4      readr_1.4.0     
+    ## [21] tidyr_1.1.2      tibble_3.0.4     ggplot2_3.3.3    tidyverse_1.3.0 
     ## 
     ## loaded via a namespace (and not attached):
-    ##  [1] Rcpp_1.0.5        lubridate_1.7.9.2 lattice_0.20-41   assertthat_0.2.1 
-    ##  [5] digest_0.6.27     utf8_1.1.4        R6_2.5.0          cellranger_1.1.0 
-    ##  [9] repr_1.1.3        backports_1.2.0   reprex_0.3.0      evaluate_0.14    
-    ## [13] httr_1.4.2        highr_0.8         pillar_1.4.7      rlang_0.4.10     
-    ## [17] curl_4.3          readxl_1.3.1      rstudioapi_0.13   Matrix_1.2-18    
-    ## [21] rmarkdown_2.6     labeling_0.4.2    splines_4.0.3     munsell_0.5.0    
-    ## [25] broom_0.7.3       compiler_4.0.3    modelr_0.1.8      xfun_0.20        
-    ## [29] pkgconfig_2.0.3   base64enc_0.1-3   mgcv_1.8-33       htmltools_0.5.0  
-    ## [33] tidyselect_1.1.0  fansi_0.4.2       crayon_1.3.4      dbplyr_2.0.0     
-    ## [37] withr_2.3.0       grid_4.0.3        nlme_3.1-149      jsonlite_1.7.2   
-    ## [41] gtable_0.3.0      lifecycle_0.2.0   DBI_1.1.0         magrittr_2.0.1   
-    ## [45] scales_1.1.1      cli_2.2.0         stringi_1.5.3     farver_2.0.3     
-    ## [49] fs_1.5.0          xml2_1.3.2        ellipsis_0.3.1    generics_0.1.0   
-    ## [53] vctrs_0.3.6       tools_4.0.3       glue_1.4.2        hms_1.0.0        
-    ## [57] yaml_2.2.1        colorspace_2.0-0  rvest_0.3.6       knitr_1.30       
-    ## [61] haven_2.3.1
+    ##  [1] colorspace_2.0-0   ellipsis_0.3.1     class_7.3-17       base64enc_0.1-3   
+    ##  [5] fs_1.5.0           rstudioapi_0.13    listenv_0.8.0      furrr_0.2.1       
+    ##  [9] farver_2.0.3       prodlim_2019.11.13 fansi_0.4.2        lubridate_1.7.9.2 
+    ## [13] ranger_0.12.1      xml2_1.3.2         codetools_0.2-16   splines_4.0.3     
+    ## [17] knitr_1.30         jsonlite_1.7.2     pROC_1.16.2        kernlab_0.9-29    
+    ## [21] dbplyr_2.0.0       compiler_4.0.3     httr_1.4.2         backports_1.2.0   
+    ## [25] assertthat_0.2.1   Matrix_1.2-18      cli_2.2.0          htmltools_0.5.0   
+    ## [29] tools_4.0.3        gtable_0.3.0       glue_1.4.2         Rcpp_1.0.5        
+    ## [33] cellranger_1.1.0   DiceDesign_1.8-1   vctrs_0.3.6        nlme_3.1-149      
+    ## [37] iterators_1.0.13   timeDate_3043.102  gower_0.2.2        xfun_0.20         
+    ## [41] globals_0.14.0     rvest_0.3.6        lifecycle_0.2.0    future_1.21.0     
+    ## [45] MASS_7.3-53        ipred_0.9-9        hms_1.0.0          parallel_4.0.3    
+    ## [49] yaml_2.2.1         curl_4.3           gridExtra_2.3      rpart_4.1-15      
+    ## [53] stringi_1.5.3      highr_0.8          foreach_1.5.1      lhs_1.1.1         
+    ## [57] hardhat_0.1.5      lava_1.6.8.1       repr_1.1.3         rlang_0.4.10      
+    ## [61] pkgconfig_2.0.3    evaluate_0.14      lattice_0.20-41    labeling_0.4.2    
+    ## [65] tidyselect_1.1.0   parallelly_1.23.0  plyr_1.8.6         magrittr_2.0.1    
+    ## [69] R6_2.5.0           generics_0.1.0     DBI_1.1.0          pillar_1.4.7      
+    ## [73] haven_2.3.1        withr_2.3.0        mgcv_1.8-33        survival_3.2-7    
+    ## [77] nnet_7.3-14        modelr_0.1.8       crayon_1.3.4       utf8_1.1.4        
+    ## [81] rmarkdown_2.6      grid_4.0.3         readxl_1.3.1       reprex_0.3.0      
+    ## [85] digest_0.6.27      GPfit_1.0-8        munsell_0.5.0

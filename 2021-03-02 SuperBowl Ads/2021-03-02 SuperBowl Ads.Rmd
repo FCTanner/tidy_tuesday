@@ -1,5 +1,5 @@
 ---
-title: "2021-03-02 SuperBowl Adss"
+title: "2021-03-02 SuperBowl Ads"
 output: github_document
 ---
 
@@ -14,6 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(skimr)
 library(ggsci)
+library(tidymodels)
 theme_set(theme_bw())
 `%nin%` = Negate(`%in%`)
 ```
@@ -22,6 +23,7 @@ theme_set(theme_bw())
 
 * Potential questions
   * How did the themes of the adds change between 2000 and 2020?
+  * Beer preferences of superbowl watchers? 
   * Predict youtube metrics with brand and themes?
 
 ```{r}
@@ -29,7 +31,7 @@ youtube <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/ti
 skim(youtube)
 ```
 
-## Exploratory analysis 
+## Exploratory analysis for themes
   
 ```{r}
 youtube %>%  
@@ -38,6 +40,7 @@ youtube %>%
 ```
 
 * There are only 10 brands represented
+* Light beers are taking off
 
 
 ```{r}
@@ -104,13 +107,236 @@ p <- themes_across_years %>%
 p
 ```
 
-## Thoughts
+
+### Thoughts theme trend plot
 
 * What are best practices when including smoothing lines in plots?
   * How much should be explained? 
   * Is it obscuring data / telling a story that is not there?
-* Still to explore
-  * What is influential for youtube metrics? 
+
+## Exploratory analysis for beer preferences 
+
+* Are people drinking more light beers? Does not seem so, mid 2000s was more popular
+  * The higher total of Bud Light ads comes from that time period 
+  
+```{r}
+youtube %>%  
+  filter(brand %in% c("Budweiser", "Bud Light")) %>%
+  group_by(year) %>% 
+  count(brand) %>% 
+  ggplot(aes(x = year, y = n, color = brand)) +
+  geom_point() +
+  geom_smooth()
+```
+
+
+## Exploratory analysis for youtube metrics
+
+* Metrics: views, likes, dislikes, number comments, favorite count 
+  * Views is probably most important for ads...
+  * have to log - transform view_count
+  * Some companies have more than one ad per year, account for that
+
+  
+```{r}
+youtube %>% 
+  select(year, brand, view_count) %>% 
+  arrange(desc(view_count))
+
+youtube %>% 
+  filter(year > 2014) %>% 
+  ggplot(aes(x= log(view_count), y = brand)) +
+  geom_col() +
+  facet_wrap(~year)
+
+hist(log(youtube$view_count))
+```
+## Predictive modeling for youtube metrics
+
+### Preprocessing 
+
+```{r}
+mod_dat <- youtube %>% 
+  select(-superbowl_ads_dot_com_url, - youtube_url, -kind, -etag, -published_at, - description, - thumbnail, -channel_title, - category_id)
+
+```
+
+### Test-train split
+
+```{r}
+set.seed(123)
+
+split <- mod_dat %>%
+  filter(!is.na(view_count)) %>% 
+  initial_split(p= 0.75, strata = view_count)
+train_dat <- training(split)
+test_dat <- testing(split)
+
+plot(log(train_dat$view_count))
+plot(log(test_dat$view_count))
+
+```
+
+### Recipe
+
+```{r}
+football_recipe <- recipe((view_count ~.), 
+                          data = train_dat %>% 
+                            select(-like_count, -dislike_count, -favorite_count, -comment_count)) %>% 
+  update_role(c(year, id, title), new_role = "ID") %>% 
+  step_log(all_outcomes(), skip = TRUE) %>%
+  step_dummy(brand) 
+
+football_prep <- football_recipe %>% prep()
+football_prep
+
+```
+### Specify models
+
+```{r}
+rf_spec <- rand_forest() %>% 
+  set_engine("ranger",importance = "permutation") %>% 
+  set_mode("regression")
+
+svm_spec <- svm_rbf() %>% 
+  set_engine("kernlab") %>% 
+  set_mode("regression") %>% 
+  translate()
+```
+
+### Workflow
+
+```{r}
+rf_workflow <- workflow() %>% 
+  add_model(rf_spec) %>% 
+  add_recipe(football_recipe)
+
+svm_workflow <- workflow() %>% 
+  add_model(svm_spec) %>% 
+  add_recipe(football_recipe)
+```
+
+### Fit model
+
+```{r}
+rf_fit <- 
+  rf_workflow %>% 
+  fit(data = train_dat)
+
+svm_fit <-
+  svm_workflow %>% 
+  fit(data = train_dat)
+```
+
+
+### Predict
+
+```{r}
+results_test <- rf_fit %>%
+  predict(new_data = test_dat) %>%
+  mutate(truth = log(test_dat$view_count),
+    model = "Random forests") %>% 
+  bind_rows(svm_fit %>% 
+              predict(new_data = test_dat) %>% 
+              mutate(truth = log(test_dat$view_count),
+    model = "SVM"))
+
+
+results_train <- rf_fit %>%
+  predict(new_data = train_dat) %>%
+  mutate(truth = log(train_dat$view_count),
+    model = "Random forests") %>% 
+  bind_rows(svm_fit %>% 
+              predict(new_data = train_dat) %>% 
+              mutate(truth = log(train_dat$view_count),
+    model = "SVM"))
+
+```
+
+
+### Evaluate 
+
+```{r}
+results_test %>% 
+  group_by(model) %>% 
+  rsq(truth = truth, estimate = .pred)
+
+results_train %>% 
+  group_by(model) %>% 
+  rsq(truth = truth, estimate = .pred)
+```
+
+### Plots 
+
+
+```{r}
+p <- results_test %>% 
+  mutate(train = "Test set") %>% 
+  bind_rows(results_train %>% 
+              mutate(train = "Training set")) %>% 
+  ggplot(aes(x = truth ,y = .pred, color = model)) +
+  geom_abline(lty = 2, color = "gray80", size = 1.3) +
+  geom_point(alpha = 0.8) +
+  facet_grid(model~train) +
+  labs(
+    x = "True log view count",
+    y = "Predicted log view count",
+    color = "Type of model") +
+  scale_color_jco()
+
+
+p
+```
+
+
+### Variable importance? 
+
+
+* Doritos does well
+
+```{r}
+library(vip)
+rf_fit %>%
+  pull_workflow_fit() %>%
+  vi()
+```
+
+
+
+```{r}
+youtube %>% 
+  ggplot(aes(x = as.factor(year), y = log(view_count), color = funny, fill = funny)) +
+  geom_bar(stat = "summary", fun.y = "mean", position = "dodge")
+
+p <- ggplot() +
+  geom_point(data = youtube %>% filter(brand != "Doritos"),aes(x= year , y = view_count), alpha = 0.5) +
+  annotate("segment", x = 2010.3, xend= 2012, y = 100000000, yend = 176373378) +
+  geom_point(data = youtube %>% filter(brand == "Doritos"), 
+             aes(x= year , y = view_count), color = "black", fill = "orange", shape = 24, size = 3) + 
+  scale_y_log10(labels = comma) +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        legend.position = "none") +
+  labs(x= NULL, y = "Views", title = "Doritos Superbowl commercials are successful on Youtube", 
+       caption= "Black dots = other brands") +
+  annotate("text", x = 2007, y= 100000000, label = "Doritos Sling Baby (2012)\nTotal views: 176 million") 
+
+p
+
+```
+
+```{r}
+ggsave(p, filename = "doritos views.png", units = "cm", width = 14, height = 10, limitsize = F, scale = 1.4)
+```
+
+
+### Thoughts
+
+* The graph should be interactive (display brand, view_count and youtube url)
+* Keep going with modeling
+  * So far, I only used it to determine important predictors for view_count
+* Make sure variable importance from random forests is stable
   
   
 
