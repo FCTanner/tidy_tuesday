@@ -1,6 +1,6 @@
 # Tidy Tuesday
 
-This repo contains selected Tidy Tuesday analyses. Folders include original scripts and Rmarkdown documents. See below for some graphs from the individual analyses. 
+This repo contains selected [TidyTuesday](https://github.com/rfordatascience/tidytuesday) analyses. Folders include original scripts and Rmarkdown documents. See below for some graphs from the individual analyses. 
 
 ---
 
