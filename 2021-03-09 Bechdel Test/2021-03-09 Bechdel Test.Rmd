@@ -1,0 +1,182 @@
+---
+title: "2021-03-09 Bechdel Test"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+.libPaths("C:/R-packages2/")
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r}
+library(tidyverse)
+library(skimr)
+library(ggsci)
+theme_set(theme_bw())
+`%nin%` = Negate(`%in%`)
+```
+
+## Data prep
+
+```{r}
+raw_bechdel <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-03-09/raw_bechdel.csv')
+movies <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-03-09/movies.csv')
+
+skim(raw_bechdel)
+skim(movies)
+```
+
+* How do the Bechdel scores change over the years? 
+* How does Bechdel score influence movie rating?
+* Ratings:
+  * 0 = Unscored
+  * 1 = At least two named women...
+  * 2 = ...Who talk to each other...
+  * 3 = ... About something besides a man. 
+* Also interesting: 
+  * Which directors make movies with low Bechdel scores?
+  * Opposite? 
+
+
+## Exploratory
+
+```{r}
+length(unique(movies$imdb_id))
+movies %>% group_by(clean_test) %>% count()
+
+movies %>% select(year, decade_code) %>% distinct()
+
+```
+
+### How does the Bechdel score change throughout the decades?
+
+```{r}
+movies %>% 
+  filter(clean_test != "dubious") %>%
+  mutate(decade = str_c((year - year %% 10), "s")) %>% 
+  group_by(clean_test, decade) %>% 
+  count() %>% 
+  ggplot(aes(y = n, x= fct_relevel(clean_test, c("nowomen", "notalk", "men", "ok")))) +
+  geom_col() +
+  facet_wrap(~decade) 
+
+```
+
+* frequency would be more interesting
+  * Could make a graph as for income bracket distribution (2021-02-09)
+  * However, there does not seem to be a strong trend
+
+### What is the relation between Bechdel score and IMDB rating?
+
+```{r}
+movies %>% 
+  mutate(imdb_id <- str_remove(imdb, "tt")) %>% 
+  left_join(raw_bechdel %>% select(imdb_id, rating), by = "imdb_id") %>% 
+  filter(!is.na(imdb_rating), !is.na(rating), !is.na(domgross_2013)) %>% 
+  mutate(rating = as.factor(rating),
+         decade = str_c((year - year %% 10), "s"),
+         domgross_2013 = as.numeric(domgross_2013)) %>% 
+  ggplot(aes(y = imdb_rating, x = binary)) +
+  # ggplot(aes(y = imdb_rating, x = rating)) + 
+  geom_boxplot(outlier.alpha = 0) +
+  geom_jitter(aes(size = domgross_2013),alpha = 0.1) +
+  facet_wrap(~decade, nrow =1)
+
+```
+
+* It's striking that the upper end of the IMDB rating seem to mostly fail the Bechdel test!
+  * Categorize IMDB rating into >8, 7 - 8, 6 - 7, 5 -6 , < 5
+    * Actually, the ratings can probably be used as discrete classes 
+    * Rarely above 8.5 and below 5 though (group these?)
+  * Calculate FAIL/PASS in each category
+  * Possibly normalize for total gross 2013?
+
+```{r}
+movies %>% group_by(imdb_rating) %>% count()
+  
+```
+
+```{r}
+movies %>% 
+  filter(!is.na(imdb_rating)) %>% 
+  group_by(binary) %>% 
+  summarise(mean_bin = mean(imdb_rating))
+```
+
+
+```{r}
+movies$binary_code <- 0
+movies$binary_code[movies$binary == "PASS"] <- 1
+movies$binary_code[movies$binary == "FAIL"] <- -1
+
+movies %>%
+  filter(!is.na(imdb_rating), !is.na(binary)) %>%
+  ggplot(aes(x = imdb_rating, y = binary_code, color = binary, fill = binary)) +
+  geom_col() +
+  coord_flip() +
+  geom_hline(yintercept =  0, size = 1.2, alpha = 0.5) +
+  labs(y = "Amount of passes and failures", x = "IMDB rating") +
+  theme(legend.position = "empty",
+        panel.grid = element_blank()) +
+  scale_y_continuous(limits = c(-50,50))+
+  annotate(geom = "text", x = 7.3, y = -10, label = "Fail") +
+  annotate(geom = "text", x = 7, y = 10, label = "Pass") +
+  annotate(geom = "segment", x = 6.600714, xend = 6.600714, y = 0, yend = 50, linetype =2, size = 1.2, alpha = 0.8)+
+  annotate(geom = "segment", x = 6.885202, xend = 6.885202, y = 0, yend = -50, linetype =2, size = 1.2, alpha = 0.8)
+# add labels with average
+# add title 
+# fix x-axis so that it is not negative? 
+```
+
+```{r}
+# movies %>% 
+#   filter(!is.na(imdb_rating), year > 1990, !is.na(binary)) %>%
+#   group_by(imdb_rating, binary) %>%
+#   mutate(imdb_rating = as.factor(imdb_rating)) %>%
+#   add_count(imdb_rating) %>% 
+#   rename(total_per_imdb_score = n) %>% 
+#   group_by(imdb_rating) %>% 
+#   add_count(binary)
+#   
+#   
+#          total_per_imdb_rating = count(imdb_rating))
+#   ggplot(aes(y = imdb_rating, x = binary)) +
+#   # ggplot(aes(y = imdb_rating, x = rating)) + 
+#   geom_boxplot(outlier.alpha = 0) +
+#   geom_jitter(aes(size = domgross_2013),alpha = 0.1) +
+#   facet_wrap(~decade, nrow =1)
+
+```
+
+
+
+## Thoughts for further analysis
+* Determine the influence of writers and directors:
+  * Split the column with the writers into dummy-coded columns, do some ML 
+  
+  
+  
+
+```{r}
+sessionInfo()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
