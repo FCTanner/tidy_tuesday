@@ -1,0 +1,78 @@
+---
+title: "2021-03-16 Video Games + Sliced"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+.libPaths("C:/R-packages2/")
+knitr::opts_chunk$set(echo = TRUE)
+rm(list = ls())
+```
+
+
+
+```{r}
+library(tidyverse)
+library(ggdark)
+library(gganimate)
+```
+
+
+## Prep data
+
+```{r}
+games <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-03-16/games.csv')
+```
+
+## Graph most popular games over time
+
+
+```{r Find games with highest playerbase}
+most_popular <- games %>% 
+  filter(year > 2016) %>% 
+  arrange(desc(avg)) %>% 
+  head(158) %>%  # This number is chosen to limit total games to 12
+  select(gamename) %>% 
+  distinct
+```
+
+
+
+```{r Plot}
+p <- games %>% 
+  filter(gamename %in% most_popular$gamename, 
+         avg > 100,
+         year > 2016) %>% 
+  mutate(Date = lubridate::my(str_c(month, year))) %>% 
+  ggplot(aes(x = Date, y = avg, color= gamename)) +
+  geom_label(aes(x = Date, y = avg, label= gamename)) +
+  dark_theme_classic() +
+  theme(legend.position = "blank",
+        panel.grid.major.y = element_line(color = "grey", size = 0.2)) +
+  scale_y_log10(labels= scales::comma) +
+  scale_x_date(limits = c(as.Date("2017-01-01"), as.Date("2021-08-01"))) +
+  labs(x = NULL, y = "Average concurrent players", title = "12 most popular games on Steam since 2017")
+
+p
+```
+
+
+```{r Animate}
+
+p_animate <- p + transition_time(Date)
+games_animation <- animate(p_animate, nframes = 150, fps = 10,  height = 12, width = 14, units = "cm", res = 96)
+anim_save("games.gif")
+
+
+```
+
+
+## Further analysis
+
+* Add game logos instead of "gamenames" into the animation
+
+```{r}
+sessionInfo()
+```
+
+
