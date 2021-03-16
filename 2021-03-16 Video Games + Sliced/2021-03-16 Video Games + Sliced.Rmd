@@ -51,7 +51,7 @@ p <- games %>%
         panel.grid.major.y = element_line(color = "grey", size = 0.2)) +
   scale_y_log10(labels= scales::comma) +
   scale_x_date(limits = c(as.Date("2017-01-01"), as.Date("2021-08-01"))) +
-  labs(x = NULL, y = "Average concurrent players", title = "12 most popular games on Steam since 2017")
+  labs(x = NULL, y = "Average concurrent players", title = "12 most played games on Steam since 2017")
 
 p
 ```
