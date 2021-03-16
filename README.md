@@ -4,6 +4,14 @@ This repo contains selected [TidyTuesday](https://github.com/rfordatascience/tid
 
 ---
 
+## 2021-03-16 Video Games + Sliced
+
+[Code](https://github.com/FCTanner/tidy_tuesday/blob/main/2021-03-16%20Video%20Games%20%2B%20Sliced/2021-03-16-Video-Games-%2B-Sliced.md)
+
+![alt text](https://github.com/FCTanner/tidy_tuesday/blob/main/2021-03-16%20Video%20Games%20%2B%20Sliced/games.gif)
+
+---
+
 ## 2021-03-02 SuperBowl Ads
 
 
