@@ -1,0 +1,144 @@
+---
+title: "2021-03-30 Makeup Shades"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+.libPaths("C:/R-packages2/")
+knitr::opts_chunk$set(echo = TRUE)
+rm(list = ls())
+```
+
+
+
+```{r}
+library(tidyverse)
+library(patchwork)
+```
+
+
+
+```{r Load data}
+allCategories <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-03-30/allCategories.csv')
+```
+## Building a random name and color generator for new make-up products
+
+This script extracts names from existing products and randomly recombines them, a random hex code (balanced sample for lightness) is then added to the new name and a plot of 9 different invented make-up products is created. 
+
+```{r Filter for those products that have a double name that can be recombined}
+double_name <- allCategories %>% 
+  filter(!is.na(name), 
+         str_detect(categories, "location", negate = TRUE),
+         str_detect(name, "-", negate = TRUE)) %>% 
+  mutate(names = str_split(name, " "), 
+         length = lengths(names)) %>% 
+  filter(length == 2) 
+  
+```
+
+```{r Get sample of products with even distribution of lightness}
+hist(double_name$lightness)
+
+set.seed(123)
+
+sample_even <- double_name %>% 
+  group_by(lightness) %>% 
+  slice_sample(n= 1) 
+
+sample_even %>% 
+  ggplot(aes(lightness)) +
+  geom_histogram()
+```
+
+```{r Extract first and last name}
+
+first <- double_name %>% 
+  select(names) %>% 
+  unnest(cols = c(names)) %>% 
+  slice_head(n = nrow(double_name))
+first <- first$names
+
+second <- double_name %>% 
+  select(names) %>% 
+  unnest(cols = c(names)) %>% 
+  slice_tail(n = nrow(double_name))
+second <- second$names
+```
+
+```{r Extract HEX}
+hex_code_list <- double_name$hex
+```
+
+
+```{r Random Make-up generator}
+invent_makeup <- function(first_names = first, 
+                          second_names = second,
+                          hex_codes= hex_code_list){
+  first <- sample(first_names, 1)
+  second <- sample(second_names,1)
+  hex <- sample(hex_codes, 1)
+  out <- data.frame(name = str_to_title(str_c(first, second, sep = " ")),
+                    hex = hex)
+  return(out)
+}
+
+invent_makeup()
+```
+
+```{r Plot new make-up}
+
+plot_random_makeup <- function(){
+  
+  make_up <- invent_makeup()
+  p <- ggplot(data = make_up, aes(x = 1, y = 1)) +
+    theme(plot.background = element_rect(fill = make_up$hex, color = make_up$hex),
+          panel.background = element_rect(fill = make_up$hex, color = make_up$hex),
+          panel.border = element_blank(),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          axis.title.y=element_blank(),
+          axis.text.y=element_blank(),
+          axis.ticks.y=element_blank(),
+          axis.ticks.x=element_blank(),
+          axis.title.x = element_blank(),
+          axis.text.x=element_blank()) +
+    scale_y_continuous(limits = c(0,1)) +
+    scale_x_continuous(limits = c(0,1)) +
+    annotate(geom = "text", x = 0.5, y =0.5, 
+             label = make_up$name)
+  return(p)
+}
+```
+
+```{r}
+p1 <- plot_random_makeup()
+p2 <- plot_random_makeup()
+p3 <- plot_random_makeup()
+p4 <- plot_random_makeup()
+p5 <- plot_random_makeup()
+p6 <- plot_random_makeup()
+p7 <- plot_random_makeup()
+p8 <- plot_random_makeup() 
+p9 <- plot_random_makeup() 
+
+
+p <- p1 + p2 + p3 + p4+ p5 + p6 + p7 + p8 + p9 + plot_annotation(title = "Random Make-up Generator", caption = "Source: The Pudding data | Graphic: @TannerFlorian") &
+  theme(plot.background = element_rect(fill = "black", color = "black"),
+        text = element_text(color = "white"))
+
+p
+```
+
+```{r Save graph}
+
+ggsave(p, filename = "Random make-up.png", units = "in", width = 4, height = 2.25, dpi = 300, scale = 1.4)
+
+```
+
+
+
+```{r}
+sessionInfo()
+```
+
+
