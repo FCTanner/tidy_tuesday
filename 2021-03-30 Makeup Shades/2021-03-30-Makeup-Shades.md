@@ -43,9 +43,9 @@ allCategories <- readr::read_csv('https://raw.githubusercontent.com/rfordatascie
 ## Building a random name and color generator for new make-up products
 
 This script extracts names from existing products and randomly
-recombines them, a random hex code (balanced sample for lightness) is
-then added to the new name and a plot of 9 different invented make-up
-products is created.
+recombines them into new names. A randomly sampled hex code (stratified
+sampling for lightness) is then added to the new name and a plot of
+different invented make-up products is created.
 
 ### Filter for those products that have a double name that can be recombined
 
@@ -129,7 +129,6 @@ invent_makeup()
 
 ``` r
 plot_random_makeup <- function(){
-  
   make_up <- invent_makeup()
   p <- ggplot(data = make_up, aes(x = 1, y = 1)) +
     theme(plot.background = element_rect(fill = make_up$hex, color = make_up$hex),
@@ -163,9 +162,15 @@ p6 <- plot_random_makeup()
 p7 <- plot_random_makeup()
 p8 <- plot_random_makeup() 
 p9 <- plot_random_makeup() 
+p10 <- plot_random_makeup()
+p11 <- plot_random_makeup()
+p12 <- plot_random_makeup()
+p13 <- plot_random_makeup() 
+p14 <- plot_random_makeup() 
+p15 <- plot_random_makeup()
+p16 <- plot_random_makeup()
 
-
-p <- p1 + p2 + p3 + p4+ p5 + p6 + p7 + p8 + p9 + plot_annotation(title = "Random Make-up Generator", caption = "Source: The Pudding data | Graphic: @TannerFlorian") &
+p <- p1 + p2 + p3 + p4+ p5 + p6 + p7 + p8 + p9 + p10 + p11 + p12 + p13 + p14 + p15 + p16 + plot_annotation(title = "Make-up Generator", caption = "Source: The Pudding data | Graphic: @TannerFlorian") &
   theme(plot.background = element_rect(fill = "black", color = "black"),
         text = element_text(color = "white"))
 
