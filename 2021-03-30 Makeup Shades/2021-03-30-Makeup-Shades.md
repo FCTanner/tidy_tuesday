@@ -20,6 +20,8 @@ library(tidyverse)
 library(patchwork)
 ```
 
+### Load data
+
 ``` r
 allCategories <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-03-30/allCategories.csv')
 ```
@@ -45,6 +47,8 @@ recombines them, a random hex code (balanced sample for lightness) is
 then added to the new name and a plot of 9 different invented make-up
 products is created.
 
+### Filter for those products that have a double name that can be recombined
+
 ``` r
 double_name <- allCategories %>% 
   filter(!is.na(name), 
@@ -55,11 +59,13 @@ double_name <- allCategories %>%
   filter(length == 2) 
 ```
 
+### Get sample of products with even distribution of lightness
+
 ``` r
 hist(double_name$lightness)
 ```
 
-![](2021-03-30-Makeup-Shades_files/figure-gfm/Get%20sample%20of%20products%20with%20even%20distribution%20of%20lightness-1.png)<!-- -->
+![](2021-03-30-Makeup-Shades_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
 
 ``` r
 set.seed(123)
@@ -75,7 +81,9 @@ sample_even %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](2021-03-30-Makeup-Shades_files/figure-gfm/Get%20sample%20of%20products%20with%20even%20distribution%20of%20lightness-2.png)<!-- -->
+![](2021-03-30-Makeup-Shades_files/figure-gfm/unnamed-chunk-4-2.png)<!-- -->
+
+### Extract first and last name
 
 ``` r
 first <- double_name %>% 
@@ -91,9 +99,13 @@ second <- double_name %>%
 second <- second$names
 ```
 
+### Extract HEX
+
 ``` r
 hex_code_list <- double_name$hex
 ```
+
+### Random Make-up generator
 
 ``` r
 invent_makeup <- function(first_names = first, 
@@ -112,6 +124,8 @@ invent_makeup()
 
     ##           name     hex
     ## 1 Warm Neutral #F4C99C
+
+### Plot new make-up
 
 ``` r
 plot_random_makeup <- function(){
@@ -137,6 +151,8 @@ plot_random_makeup <- function(){
 }
 ```
 
+### Combine plots into panel
+
 ``` r
 p1 <- plot_random_makeup()
 p2 <- plot_random_makeup()
@@ -156,7 +172,9 @@ p <- p1 + p2 + p3 + p4+ p5 + p6 + p7 + p8 + p9 + plot_annotation(title = "Random
 p
 ```
 
-![](2021-03-30-Makeup-Shades_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
+![](2021-03-30-Makeup-Shades_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+
+### Save graph
 
 ``` r
 ggsave(p, filename = "Random make-up.png", units = "in", width = 4, height = 2.25, dpi = 300, scale = 1.4)

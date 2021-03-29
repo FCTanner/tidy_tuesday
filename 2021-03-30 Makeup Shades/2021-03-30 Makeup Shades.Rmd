@@ -17,15 +17,18 @@ library(patchwork)
 ```
 
 
+### Load data
 
-```{r Load data}
+```{r}
 allCategories <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-03-30/allCategories.csv')
 ```
 ## Building a random name and color generator for new make-up products
 
 This script extracts names from existing products and randomly recombines them, a random hex code (balanced sample for lightness) is then added to the new name and a plot of 9 different invented make-up products is created. 
 
-```{r Filter for those products that have a double name that can be recombined}
+### Filter for those products that have a double name that can be recombined
+
+```{r}
 double_name <- allCategories %>% 
   filter(!is.na(name), 
          str_detect(categories, "location", negate = TRUE),
@@ -36,7 +39,9 @@ double_name <- allCategories %>%
   
 ```
 
-```{r Get sample of products with even distribution of lightness}
+### Get sample of products with even distribution of lightness
+
+```{r}
 hist(double_name$lightness)
 
 set.seed(123)
@@ -50,7 +55,9 @@ sample_even %>%
   geom_histogram()
 ```
 
-```{r Extract first and last name}
+### Extract first and last name
+
+```{r}
 
 first <- double_name %>% 
   select(names) %>% 
@@ -65,12 +72,15 @@ second <- double_name %>%
 second <- second$names
 ```
 
-```{r Extract HEX}
+### Extract HEX
+
+```{r}
 hex_code_list <- double_name$hex
 ```
 
+### Random Make-up generator
 
-```{r Random Make-up generator}
+```{r}
 invent_makeup <- function(first_names = first, 
                           second_names = second,
                           hex_codes= hex_code_list){
@@ -85,7 +95,9 @@ invent_makeup <- function(first_names = first,
 invent_makeup()
 ```
 
-```{r Plot new make-up}
+### Plot new make-up
+
+```{r}
 
 plot_random_makeup <- function(){
   
@@ -110,6 +122,8 @@ plot_random_makeup <- function(){
 }
 ```
 
+### Combine plots into panel
+
 ```{r}
 p1 <- plot_random_makeup()
 p2 <- plot_random_makeup()
@@ -129,7 +143,9 @@ p <- p1 + p2 + p3 + p4+ p5 + p6 + p7 + p8 + p9 + plot_annotation(title = "Random
 p
 ```
 
-```{r Save graph}
+### Save graph
+
+```{r}
 
 ggsave(p, filename = "Random make-up.png", units = "in", width = 4, height = 2.25, dpi = 300, scale = 1.4)
 
