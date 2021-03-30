@@ -7,7 +7,8 @@ This repo contains selected [TidyTuesday](https://github.com/rfordatascience/tid
 
 ## 2021-03-30 Makeup Shades
 
-This week, something a bit silly: A random generator of make-up products
+No analysis this week, instead, I built a random generator of make-up products:
+
 [Code](https://github.com/FCTanner/tidy_tuesday/blob/main/2021-03-30%20Makeup%20Shades/2021-03-30-Makeup-Shades.md)
 
 ![alt text](https://github.com/FCTanner/tidy_tuesday/blob/main/2021-03-30%20Makeup%20Shades/Random%20make-up.png)

@@ -170,9 +170,9 @@ p14 <- plot_random_makeup()
 p15 <- plot_random_makeup()
 p16 <- plot_random_makeup()
 
-p <- p1 + p2 + p3 + p4+ p5 + p6 + p7 + p8 + p9 + p10 + p11 + p12 + p13 + p14 + p15 + p16 + plot_annotation(title = "Make-up Generator", caption = "Source: The Pudding data | Graphic: @TannerFlorian") &
+p <- p1 + p2 + p3 + p4+ p5 + p6 + p7 + p8 + p9 + p10 + p11 + p12 + p13 + p14 + p15 + p16 + plot_annotation(title = "Made-up Make-up", caption = "Source: The Pudding data | Graphic: @TannerFlorian") &
   theme(plot.background = element_rect(fill = "black", color = "black"),
-        text = element_text(color = "white"))
+        text = element_text(color = "white", hjust = 0.5))
 
 p
 ```
