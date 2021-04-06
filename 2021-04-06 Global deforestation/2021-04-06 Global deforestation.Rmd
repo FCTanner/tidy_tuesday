@@ -1,0 +1,59 @@
+---
+title: "2021-04-06 Global deforestation"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+.libPaths("C:/R-packages2/")
+knitr::opts_chunk$set(echo = TRUE)
+rm(list = ls())
+```
+
+
+
+```{r}
+library(tidyverse)
+library(maps)
+```
+
+
+### Load data
+
+```{r}
+forest <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-04-06/forest.csv')
+forest_area <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-04-06/forest_area.csv')
+```
+## Goals
+* Learn how to use maps in ggplot
+* Display change of forest area from year x to year z in percent, as color code on map 
+
+
+```{r}
+world_map <- map_data("world")
+ggplot(world_map, aes(x = long, y = lat, group = group)) +
+  geom_polygon(fill="lightgray", colour = "white") +
+  theme_void()
+```
+###
+
+In the forest dataset, 2015 rows give the annual average over the period from 2015 to 2020.
+
+```{r}
+forest %>% 
+  filter(year == 2010) %>% 
+  rename(region = entity) %>% 
+  left_join(world_map) %>% 
+  ggplot(aes(x = long, y = lat, group = group, color = net_forest_conversion, fill = net_forest_conversion)) +
+  geom_polygon() +
+  theme_void() +
+  scale_fill_gradient2(low = "blue", mid = "grey", high = "red") +
+  scale_color_gradient2(low = "blue", mid = "grey", high = "red")
+```
+
+### Combine map data and forest data
+
+```{r}
+sessionInfo()
+```
+
+
