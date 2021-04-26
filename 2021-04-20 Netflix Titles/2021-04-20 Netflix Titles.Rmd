@@ -1,0 +1,103 @@
+---
+title: "2021-04-20 Netflix Titles"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+.libPaths("C:/R-packages2/")
+knitr::opts_chunk$set(echo = TRUE)
+rm(list = ls())
+```
+
+
+
+```{r}
+library(tidyverse)
+library(patchwork)
+library(extrafont)
+library(lubridate)
+library(stringr)
+```
+
+## Read data 
+
+```{r}
+netflix_titles <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-04-20/netflix_titles.csv')
+```
+
+## Visualization
+
+* Examine origin of shows over time 
+  * often multiple countries 
+  * str_detect seems to only work for exact matches, why is that?
+  * this needs to be fixed
+  
+
+```{r}
+netflix_titles %>% 
+  filter(str_detect("United States | ,United States | United States,",  country)) ###
+```
+
+```{r}
+netflix_titles_main_country <- netflix_titles %>% 
+  filter(!is.na(country)) %>% 
+  mutate(date_added = mdy(date_added),
+         year_added = floor_date(date_added, unit = "years"),
+         countries =  str_split(country, ", ")) 
+
+netflix_titles_main_country$main_country <- NA
+for (i in 1:nrow(netflix_titles_main_country)){
+  netflix_titles_main_country$main_country[i] <- netflix_titles_main_country$countries[[i]][1]
+  netflix_titles_main_country$main_country[i] <- str_remove(netflix_titles_main_country$main_country[i], ",")
+}
+
+productions_per_country <- netflix_titles_main_country %>% 
+  group_by(year_added) %>% 
+  count(main_country, sort = TRUE)
+  
+```
+
+### Top producing countries
+
+```{r}
+
+
+productions_per_country %>% 
+  filter(year_added > "2013-01-01", !is.na(year_added)) %>% 
+  group_by(year_added) %>% 
+  top_n(6) %>% 
+  ungroup %>%
+  mutate(year_added = as.factor(year_added),
+         main_country = tidytext::reorder_within(main_country, n, year_added)) %>%
+  ggplot(aes(x = main_country, y= n)) +
+  geom_col() +
+  facet_wrap(~year_added, scales = "free")   +
+  coord_flip() +
+  tidytext::scale_x_reordered() 
+```
+
+
+```{r}
+
+US_productions_per_year %>% 
+  filter(year_added > "2013-01-01", year_added < "2021-01-01") %>% 
+  ggplot(aes(x = year_added, y = ratio)) +
+  scale_y_continuous(limits = c(0,1), labels = scales::percent) +
+  scale_x_date() +
+  geom_area(aes(x = year_added, y = 1), fill = "lightblue") +
+  geom_area(fill = "blue", alpha = 0.6) +
+  theme(panel.background = element_blank(), 
+        plot.background = element_blank(), 
+        panel.grid.major.x  = element_blank(),
+        panel.grid.minor.x  = element_blank()) +
+  geom_text(aes(x = year_added, y = ratio + 0.1, label = `FALSE`)) +
+  geom_text(aes(x = year_added, y = ratio - 0.1, label = `TRUE`)) +
+  labs(x = NULL)
+```
+
+
+```{r}
+sessionInfo()
+```
+
+
