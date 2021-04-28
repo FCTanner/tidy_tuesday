@@ -2,6 +2,14 @@
 
 This repo contains selected [TidyTuesday](https://github.com/rfordatascience/tidytuesday) analyses. Folders include original scripts and Rmarkdown documents. See below for some graphs from the individual analyses. 
 
+---
+
+## 2021-04-20 Netflix Titles
+
+[Code](https://github.com/FCTanner/tidy_tuesday/blob/main/2021-04-20%20Netflix%20Titles/2021-04-20-Netflix-Titles.md)
+
+![alt text](https://github.com/FCTanner/tidy_tuesday/blob/main/2021-04-20%20Netflix%20Titles/Countries.png)
+
 
 ---
 
