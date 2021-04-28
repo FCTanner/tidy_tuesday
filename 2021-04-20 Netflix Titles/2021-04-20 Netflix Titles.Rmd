@@ -17,6 +17,7 @@ library(patchwork)
 library(extrafont)
 library(lubridate)
 library(stringr)
+library(countrycode)
 ```
 
 ## Read data 
@@ -28,10 +29,10 @@ netflix_titles <- readr::read_csv('https://raw.githubusercontent.com/rfordatasci
 ## Visualization
 
 * Examine origin of shows over time 
-  * often multiple countries 
-  * str_detect seems to only work for exact matches, why is that?
-  * this needs to be fixed
-  
+* often multiple countries 
+* str_detect seems to only work for exact matches, why is that?
+* this needs to be fixed
+
 
 ```{r}
 netflix_titles %>% 
@@ -43,6 +44,7 @@ netflix_titles_main_country <- netflix_titles %>%
   filter(!is.na(country)) %>% 
   mutate(date_added = mdy(date_added),
          year_added = floor_date(date_added, unit = "years"),
+         year_added = round_date(year_added, "year"),
          countries =  str_split(country, ", ")) 
 
 netflix_titles_main_country$main_country <- NA
@@ -53,17 +55,17 @@ for (i in 1:nrow(netflix_titles_main_country)){
 
 productions_per_country <- netflix_titles_main_country %>% 
   group_by(year_added) %>% 
-  count(main_country, sort = TRUE)
-  
+  count(main_country, sort = TRUE) 
+
 ```
 
 ### Top producing countries
 
 ```{r}
-
-
 productions_per_country %>% 
-  filter(year_added > "2013-01-01", !is.na(year_added)) %>% 
+  filter(year_added > "2013-01-01", 
+         year_added < "2021-01-01", 
+         !is.na(year_added)) %>% 
   group_by(year_added) %>% 
   top_n(6) %>% 
   ungroup %>%
@@ -76,23 +78,127 @@ productions_per_country %>%
   tidytext::scale_x_reordered() 
 ```
 
+## Top - producing regions
 
 ```{r}
+productions_per_region <- netflix_titles_main_country %>% 
+  mutate(region = countrycode(main_country,origin = "country.name",
+                              destination = "region")) %>% 
+  group_by(year_added) %>% 
+  count(region, sort = TRUE)
 
-US_productions_per_year %>% 
-  filter(year_added > "2013-01-01", year_added < "2021-01-01") %>% 
-  ggplot(aes(x = year_added, y = ratio)) +
-  scale_y_continuous(limits = c(0,1), labels = scales::percent) +
-  scale_x_date() +
-  geom_area(aes(x = year_added, y = 1), fill = "lightblue") +
-  geom_area(fill = "blue", alpha = 0.6) +
+```
+
+
+```{r, fig.height=8}
+productions_per_region %>% 
+  filter(year_added > "2010-01-01", 
+         year_added < "2021-01-01", 
+         !is.na(year_added)) %>% 
+  group_by(year_added) %>% 
+  top_n(6) %>% 
+  ungroup %>%
+  mutate(year_added = as.factor(year_added),
+         region = tidytext::reorder_within(region, n, year_added)) %>%
+  ggplot(aes(x = region, y= n)) +
+  geom_col() +
+  facet_wrap(~year_added, scales = "free")   +
+  coord_flip() +
+  tidytext::scale_x_reordered() 
+```
+
+```{r}
+netflix_titles_main_region <- netflix_titles_main_country %>% 
+  mutate(region = countrycode(main_country,origin = "country.name",
+                              destination = "region"))
+
+netflix_titles_main_region$NA_vs_others <- "Other"
+netflix_titles_main_region$NA_vs_others[netflix_titles_main_region$region == "North America"] <-  "North America"
+```
+
+
+########################
+
+```{r}
+NA_color <- "#2ca25f"
+other_countries_color <-  "#99d8c9"
+set_font <- "Calibri"
+set_size <- 2.5
+```
+
+```{r}
+p_dat <- netflix_titles_main_region %>% 
+  group_by(year_added) %>% 
+  count(NA_vs_others, sort = TRUE) %>% 
+  pivot_wider(names_from = NA_vs_others, values_from= n, values_fill = 0) %>% 
+  mutate(ratio = `North America`/ (`North America` + Other)) %>% 
+  filter(year_added > "2010-01-01", year_added < "2021-01-01")
+
+p_over_time <- ggplot(data = p_dat, aes(x = year_added, y = ratio)) +
   theme(panel.background = element_blank(), 
         plot.background = element_blank(), 
         panel.grid.major.x  = element_blank(),
-        panel.grid.minor.x  = element_blank()) +
-  geom_text(aes(x = year_added, y = ratio + 0.1, label = `FALSE`)) +
-  geom_text(aes(x = year_added, y = ratio - 0.1, label = `TRUE`)) +
-  labs(x = NULL)
+        panel.grid.minor.x  = element_blank(),
+        axis.ticks.y = element_blank(),
+        text=element_text(family=set_font)) +
+  scale_y_continuous(limits = c(0,1.02), breaks = c(0,0.2,0.4,0.6,0.8,1), labels = scales::percent, expand = c(0.01,0.01)) +
+  scale_x_date(date_breaks = "1 year", date_labels = "%Y", expand = c(0.05,0.05)) +
+  geom_area(aes(x = year_added, y = 1), fill = other_countries_color) +
+  geom_label(aes(x = year_added, y = ratio - 0.1, label = `North America`), color = NA_color, fill = NA_color) +
+  geom_label(data = p_dat %>% filter(Other > 0),  
+             aes(x = year_added, y = ratio + 0.1, label = Other), color = other_countries_color, fill = other_countries_color) +
+  geom_area(fill = NA_color, alpha = 1) +
+  geom_text(data = p_dat %>% filter(Other > 0),  
+            aes(x = year_added, y = ratio + 0.1, label = Other),family=set_font, size = set_size) +
+  geom_text(aes(x = year_added, y = ratio - 0.1, label = `North America`), color = "white",family=set_font, size = set_size) +
+  annotate(geom = "text", x = as_date("2013-01-01"), y = 0.3, label = "North America", color = "white",family=set_font) +
+  annotate(geom = "text", x = as_date("2018-01-01"), y = 0.8, label = "Other countries", color = "black",family=set_font)+ 
+  annotate(geom = "text", x = as_date("2011-02-01"), y = 0.97, label = "1", color = "black",family=set_font, size = set_size)+
+  labs(x = NULL, y = NULL, subtitle = "Added between 2011 and 2020")
+```
+
+```{r}
+dat_for_color_scale <- productions_per_country %>% 
+  filter(year_added == "2020-01-01") %>% 
+  top_n(10) %>% 
+  filter(main_country != "United States")
+
+dat_for_color_scale$main_country
+
+colors <- c("United States" = NA_color, 
+            "Egypt" = other_countries_color,
+            "India" = other_countries_color,
+            "United Kingdom" = other_countries_color,
+            "Japan" = other_countries_color,
+            "Canada" = NA_color,
+            "France" = other_countries_color,
+            "South Korea" = other_countries_color,
+            "Nigeria" = other_countries_color,
+            "Spain" = other_countries_color)
+
+p_countries_2020 <- productions_per_country %>% 
+  filter(year_added == "2020-01-01") %>% 
+  top_n(10) %>% 
+  ggplot(aes(x= n, y= reorder(main_country, n), color = main_country, fill = main_country)) +
+  theme(panel.background = element_blank(), 
+        plot.background = element_blank(), 
+        panel.grid.major.x  = element_blank(),
+        panel.grid.minor.x  = element_blank(),
+        legend.position = "none",
+        axis.ticks.y = element_blank(),
+        text=element_text(family=set_font)) +
+  geom_col(width = 0.6)+
+  scale_colour_manual(values = colors) +
+  scale_fill_manual(values = colors) +
+  labs(subtitle = "Added in 2020", y = NULL, x = NULL)
+```
+
+```{r}
+p <- p_over_time+ p_countries_2020 + plot_layout(widths = c(3.5, 1)) + plot_annotation(title = "Main countries of origin of Netflix titles", caption = "Data: Shivam Bansal | Visualization: @TannerFlorian") & theme(text=element_text(family=set_font))
+p
+
+ggsave(p, filename = "Countries.png", units = "in", width = 4, height = 2.25, dpi = 300, scale = 1.4)
+
 ```
 
 
