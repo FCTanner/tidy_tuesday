@@ -1,0 +1,108 @@
+---
+title: "2021-05-25 Mario Kart World Records"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+.libPaths("C:/R-packages2/")
+knitr::opts_chunk$set(echo = TRUE)
+rm(list = ls())
+```
+
+
+
+```{r}
+library(tidyverse)
+library(extrafont)
+```
+
+## Read data 
+
+```{r}
+ds <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-05-25/records.csv')
+drivers <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-05-25/drivers.csv')
+```
+
+## Visualization
+
+* All times are PAL times
+* Most competitive tracks?
+  * Number of records
+* Which tracks seem like they could improve more? 
+* Normalization of records?
+  * Percent improvement on original record? 
+  
+
+```{r}
+ds %>% 
+  filter(shortcut == "No", type == "Single Lap") %>% 
+  ggplot(aes(x= date, y = time, group = track)) +
+  geom_line() +
+  facet_wrap(~track, scales = "free_y")
+```
+```{r}
+ds %>% 
+  filter(date > "2010-01-01", shortcut == "No", type == "Single Lap") %>% 
+  ggplot(aes(x= date, y = time, group = track)) +
+  geom_line() +
+  facet_wrap(~track, scales = "free_y")
+```
+## Compare change in time to first record
+
+* This graph is no better than the straight times
+```{r}
+ds %>% 
+  filter(date > "1999-01-01", shortcut == "No", type == "Single Lap") %>% 
+  group_by(track) %>% 
+  mutate(original_record = max(time),
+         change_to_original = 1- time/original_record) %>% 
+  ggplot(aes(date, change_to_original, group = track)) +
+  geom_line() +
+  facet_wrap(~track)
+```
+
+## Which ones are most competitive?
+
+* Not much difference 
+```{r}
+ds %>% 
+  filter(shortcut == "No", type == "Single Lap") %>% 
+  group_by(track) %>% 
+  summarise(records = n())
+```
+
+## Full graph
+
+* Focus on Bowser's castle
+* The playerbase seems relatively small, highlight the race between the different players 
+* Make the graph look like a multiplayer map
+* Turn circle shapes into custom mario kart avatars 
+
+
+### Define theme
+
+```{r}
+mk64_theme <- theme_bw() +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank())
+```
+
+
+```{r}
+ds %>% 
+  filter(date > "2000-01-01", shortcut == "No", 
+         type == "Single Lap", track == "Bowser's Castle") %>% 
+  ggplot(aes(x= date, y = time, group = track)) +
+  geom_line(alpha = 0.3) +
+  geom_point(aes(color = player, fill = player)) +
+  labs(title = "The race for the world record") +
+  mk64_theme
+```
+
+
+
+```{r}
+sessionInfo()
+```
+
+
