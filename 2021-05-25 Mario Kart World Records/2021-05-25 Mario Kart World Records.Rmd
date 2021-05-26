@@ -14,6 +14,9 @@ rm(list = ls())
 ```{r}
 library(tidyverse)
 library(extrafont)
+library(showtext)
+library(ggsci)
+library(ggimage)
 ```
 
 ## Read data 
@@ -23,15 +26,17 @@ ds <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytue
 drivers <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-05-25/drivers.csv')
 ```
 
+
+
 ## Visualization
 
 * All times are PAL times
 * Most competitive tracks?
-  * Number of records
+* Number of records
 * Which tracks seem like they could improve more? 
 * Normalization of records?
-  * Percent improvement on original record? 
-  
+* Percent improvement on original record? 
+
 
 ```{r}
 ds %>% 
@@ -40,6 +45,7 @@ ds %>%
   geom_line() +
   facet_wrap(~track, scales = "free_y")
 ```
+
 ```{r}
 ds %>% 
   filter(date > "2010-01-01", shortcut == "No", type == "Single Lap") %>% 
@@ -77,29 +83,80 @@ ds %>%
 * The playerbase seems relatively small, highlight the race between the different players 
 * Make the graph look like a multiplayer map
 * Turn circle shapes into custom mario kart avatars 
+* Add extra white line to make it appear like a course?
 
+
+### Read background image and symbols
+
+```{r}
+bg <- "Capture75opCropmoved.png"
+flag <- "flags_white_bg.png"
+font_add(family = "mariokart", regular = "SuperMario256.ttf")
+showtext_auto()
+```
 
 ### Define theme
 
 ```{r}
-mk64_theme <- theme_bw() +
+mk_font <- "mariokart"
+
+mk64_theme <- theme_dark() +
   theme(panel.grid.major.x = element_blank(),
-        panel.grid.minor.x = element_blank())
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.y = element_line(),
+        axis.title.x = element_blank(),
+        plot.background = element_rect(fill = "black"),
+        panel.background = element_rect(fill = "black"),
+        text=element_text(family=mk_font, color = "white"),
+        axis.text = element_text(family=mk_font, color = "white", size = 18),
+        plot.title = element_text(family=mk_font, color = "white", size = 33),
+        plot.subtitle = element_text(family=mk_font, color = "white", size = 22),
+        axis.title.y = element_text(family=mk_font, color = "white", size = 19),
+        
+        legend.position = "none")
+# legend.background = element_rect(fill = "black"),
+# legend.text = element_text(family=mk_font, color = "white"),
+# legend.title = element_blank(),
+# legend.box.background = element_rect(fill = "black"))
 ```
 
 
 ```{r}
-ds %>% 
-  filter(date > "2000-01-01", shortcut == "No", 
+p <- ds %>% 
+  filter(date > "2005-02-01", shortcut == "No", 
          type == "Single Lap", track == "Bowser's Castle") %>% 
   ggplot(aes(x= date, y = time, group = track)) +
-  geom_line(alpha = 0.3) +
-  geom_point(aes(color = player, fill = player)) +
-  labs(title = "The race for the world record") +
+  geom_line(color = "white", size = 2.5) +
+  geom_point(aes(fill = player), size = 1.8, shape =21) +
+  labs(title = "The race for the world record", y = "Seconds", 
+       subtitle = "Four players have been fighting it out since 2005",
+       caption = "") +
+  scale_fill_jco() +
+  scale_x_date(limits = c(as.Date("2005-01-01"), as.Date("2023-01-01"))) + 
+  geom_bgimage(bg) +
+  geom_image(aes(x= as.Date("2022-10-01"), y = 43.13, image = flag), size = 0.13) +
+  annotate(geom = "text", x =  as.Date("2021-02-02"), 
+           y = 43.24, label = "Current record:",
+           color = "white", family = mk_font, size = 6) +
+  annotate(geom = "text", x =  as.Date("2021-02-02"), 
+           y = 43.22, label = "'Dan': 43.15 sec",
+           color = "white", family = mk_font, size = 6) +
+  annotate(geom = "segment", x = as.Date("2021-02-02"), xend = as.Date("2021-02-02") , 
+           y = 43.21, yend = 43.16, color = "white", size = 0.65) +
   mk64_theme
+# Add annotation for four other players
+
+```
+
+```{r}
+ggsave("mario.png", p, device = "png", units = "in", width = 4, height = 2.25, scale = 1, type = "cairo")
 ```
 
 
+
+# https://r-coder.com/custom-fonts-r/
+# https://www.dafont.com/super-mario-256.font
 
 ```{r}
 sessionInfo()
