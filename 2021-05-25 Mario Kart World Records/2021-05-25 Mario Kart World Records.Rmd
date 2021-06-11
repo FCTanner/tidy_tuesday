@@ -151,7 +151,8 @@ p <- ds %>%
   annotate(geom = "text", x =  as.Date("2013-01-01"), 
            y = 43.30, label = "'MR'",
            color = "white", family = mk_font, size = 6) +
-  mk64_theme 
+  mk64_theme + 
+  labs(caption = "Source: Benedikt Claus/mkwrs.com | Visualization: @TannerFlorian")
 p
 ```
 
