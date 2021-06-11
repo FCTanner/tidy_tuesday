@@ -4,6 +4,15 @@ This repo contains selected [TidyTuesday](https://github.com/rfordatascience/tid
 
 ---
 
+## 2021-05-25 Mario Kart World Records
+
+[Code](https://github.com/FCTanner/tidy_tuesday/blob/main/2021-05-25%20Mario%20Kart%20World%20Records/2021-05-25-Mario-Kart-World-Records.md)
+
+![alt text](https://github.com/FCTanner/tidy_tuesday/blob/main/2021-05-25%20Mario%20Kart%20World%20Records/mario.png)
+
+
+---
+
 ## 2021-04-20 Netflix Titles
 
 [Code](https://github.com/FCTanner/tidy_tuesday/blob/main/2021-04-20%20Netflix%20Titles/2021-04-20-Netflix-Titles.md)
@@ -31,14 +40,6 @@ No analysis this week, instead, I built a random generator of make-up products:
 
 ---
 
-## 2021-03-02 SuperBowl Ads
-
-
-[Code](https://github.com/FCTanner/tidy_tuesday/blob/main/2021-03-02%20SuperBowl%20Ads/2021-03-02-SuperBowl-Ads.md)
-
-![alt text](https://github.com/FCTanner/tidy_tuesday/blob/main/2021-03-02%20SuperBowl%20Ads/doritos%20views.png)
-
---- 
 
 ## 2021-02-23 Employment and Earnings
 
