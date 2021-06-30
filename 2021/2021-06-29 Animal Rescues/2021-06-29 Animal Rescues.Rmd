@@ -1,0 +1,113 @@
+---
+title: "2021-06-29 Animal Rescues"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+.libPaths("C:/R-packages2/")
+knitr::opts_chunk$set(echo = TRUE)
+rm(list = ls())
+```
+
+```{r}
+library(tidyverse)
+library(ggmap)
+theme_set(theme_bw())
+```
+
+## Read data 
+
+```{r}
+animal_rescues <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-06-29/animal_rescues.csv')
+```
+
+## EDA
+
+What animals are involved?
+
+* Cats are most common
+* 12 incidents with snakes - what happened?
+* 2 incidents with fish - what happened?
+
+```{r}
+animal_rescues %>% 
+  group_by(animal_group_parent) %>% 
+  count
+```
+
+### Looking at a few incidents
+
+FISH IN DANGER OF DYING IN POND - more details please :) 
+
+```{r}
+animal_rescues %>% 
+ filter(animal_group_parent %in% c("Horse"))
+```
+
+### Animals rescued from height
+* Apparently a snake was rescued from height, what happened there? 
+* Will focus on cats on trees, where does that happen?
+
+```{r}
+animal_rescues %>% 
+  filter(special_service_type_category == "Animal rescue from height") %>% 
+  group_by(animal_group_parent) %>% 
+  count
+```
+
+
+```{r}
+cats <- animal_rescues %>% 
+  filter(special_service_type_category == "Animal rescue from height",
+         animal_group_parent %in% c("cat", "Cat")) %>% 
+  mutate(latitude = as.numeric(latitude), longitude= as.numeric(longitude)) %>% 
+  filter(!is.na(latitude))
+```
+
+```{r}
+horses <- animal_rescues %>% 
+  filter(special_service_type_category == "Animal rescue from water",
+         animal_group_parent %in% c("Horse")) %>% 
+  mutate(latitude = as.numeric(latitude), longitude= as.numeric(longitude)) %>% 
+  filter(!is.na(latitude))
+```
+
+## ggmap approach
+
+```{r}
+summary(as.numeric(animal_rescues$longitude))
+summary(as.numeric(animal_rescues$latitude))
+```
+
+
+```{r}
+london_loc <- c(bottom = 51.20000, top = 51.62000, left = -0.58000, right = 0.37000)
+london <- get_stamenmap(bbox= london_loc, source="stamen", maptype="terrain", crop=FALSE)
+```
+
+
+```{r}
+p_lond <- ggmap(london) +
+  geom_point(data = horses, 
+             aes(x = longitude , y = latitude),
+             alpha = 0.5,
+             color = "blue",
+             size = 1) +
+  theme_void() +
+  labs(title = "52 horses were rescued from water by the\nLondon fire brigade between 2009 and 2021",
+       caption = "Data: London.gov | Map: Stamen | Graphic: @TannerFlorian") +
+  theme(legend.position = "NULL",
+        plot.title = element_text(size = 6, hjust = 0.5, vjust = 2),
+        plot.caption = element_text(size = 4.5, hjust = 1))
+  
+```
+
+```{r}
+ggsave(plot = p_lond, filename = "test.png", device = "png",  units = "in", width = 4, height = 2.25, scale = 1, type = "cairo")
+```
+
+```{r}
+sessionInfo()
+```
+
+
