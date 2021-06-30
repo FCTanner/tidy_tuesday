@@ -4,6 +4,16 @@ This repo contains selected [TidyTuesday](https://github.com/rfordatascience/tid
 
 ---
 
+## 2021-06-29 Animal Rescues
+
+[Code](https://github.com/FCTanner/tidy_tuesday/blob/main/2021/2021-06-29%20Animal%20Rescues/2021-06-29-Animal-Rescues.md)
+
+![alt text](https://github.com/FCTanner/tidy_tuesday/blob/main/2021/2021-06-29%20Animal%20Rescues/horses.png)
+
+
+---
+
+
 ## 2021-05-25 Mario Kart World Records
 
 [Code](https://github.com/FCTanner/tidy_tuesday/blob/main/2021/2021-05-25%20Mario%20Kart%20World%20Records/2021-05-25-Mario-Kart-World-Records.md)
