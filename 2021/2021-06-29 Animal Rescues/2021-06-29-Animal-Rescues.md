@@ -243,7 +243,7 @@ p_lond <- ggmap(london) +
 ```
 
 ``` r
-ggsave(plot = p_lond, filename = "horses.png", device = "png",  units = "in", width = 4, height = 2.25, scale = 1, type = "cairo")
+ggsave(plot = p_lond, filename = "horses.png", device = "png",  units = "in", width = 4, height = 2.25, scale = 1, type = "cairo", dpi = 600)
 ```
 
 ``` r
