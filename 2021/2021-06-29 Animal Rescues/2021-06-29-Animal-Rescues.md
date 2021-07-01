@@ -235,7 +235,7 @@ p_lond <- ggmap(london) +
              color = "blue",
              size = 1) +
   theme_void() +
-  labs(title = "52 horses were rescued from water by the\nLondon fire brigade between 2009 and 2021",
+  labs(title = "52 horses were rescued from water by the\nLondon fire brigade in the last 12 years",
        caption = "Data: London.gov | Map: Stamen | Graphic: @TannerFlorian") +
   theme(legend.position = "NULL",
         plot.title = element_text(size = 6, hjust = 0.5, vjust = 2),
