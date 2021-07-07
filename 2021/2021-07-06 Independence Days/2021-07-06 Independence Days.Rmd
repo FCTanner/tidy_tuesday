@@ -1,0 +1,256 @@
+---
+title: "2021-07-06 Independence Days"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+.libPaths("C:/R-packages2/")
+knitr::opts_chunk$set(echo = TRUE)
+rm(list = ls())
+```
+
+```{r, message= FALSE, marning = FALSE, echo = FALSE}
+library(tidyverse)
+library(ggflags)
+library(countrycode)
+library(hrbrthemes)
+library(tidytext)
+library(patchwork)
+library(ggsci)
+extrafont::loadfonts()
+
+`%nin%` <- Negate(`%in%`)
+```
+
+## Read data 
+
+```{r}
+holidays <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-07-06/holidays.csv')
+```
+
+## EDA 
+
+
+Could be interesting: Independence from
+* UK
+* Spanish Empire
+* France
+* Fall of Soviet Union
+
+
+```{r}
+holidays %>% 
+  mutate(country_code = tolower(countrycode(country, origin = "country.name", destination = "iso2c"))) %>% 
+  filter(independence_from %in% c("Spanish Empire", "United Kingdom", "Soviet Union", "France"),
+         country != "Micronesia") %>% 
+  ggplot(aes(y = independence_from, x = date_parsed, country = country_code)) +
+  geom_flag()+
+  theme(panel.grid.minor.y = element_blank(),
+        panel.grid.major.y = element_blank()) +
+  facet_wrap(~independence_from, nrow = 4, scales = "free")
+```
+
+
+### United Kingdom 
+```{r}
+p_uk <- holidays %>% 
+  mutate(country_code = tolower(countrycode(country, origin = "country.name", destination = "iso2c")),
+         country_name = str_replace(country, "Saint Vincent and the Grenadines", "St Vincent at. Grndns"),
+         date_short = format(date_parsed, "%d %b %Y")) %>% 
+  filter(independence_from == "United Kingdom",
+         country %nin% c("Micronesia", "Cyprus")) %>% 
+  mutate(country = reorder_within(country, desc(date_parsed), independence_from)) %>% 
+  ggplot(aes(y = country, x = date_parsed, country = country_code)) +
+  geom_flag()+
+  geom_point(shape =1, size = 6) +
+  theme_ipsum() +
+  theme(panel.grid.minor.y = element_blank(),
+        panel.grid.major.y = element_blank(),
+        axis.text.y = element_blank(),
+        plot.title =element_text(hjust = 1)) +
+  scale_y_reordered() + 
+  geom_label(aes(x = date_parsed + 850, y = country,
+                 label = paste0(country_name, ": ", date_short, " ",sep = "")),
+             label.size = NA,
+             hjust = 0,
+             family = "Arial Narrow") +
+  scale_x_date(limits = c(as.Date("1912-01-01"), as.Date("2030-01-01")), 
+               breaks = c(as.Date("1920-01-01"),
+                          as.Date("1940-01-01"),
+                          as.Date("1960-01-01"),
+                          as.Date("1980-01-01"),
+                          as.Date("2000-01-01")),
+               date_labels = c("1920", "1940", "1960", "1980", "2000")) +
+  labs(x = "", y = "", title= "Celebrations of independence from the United Kingdom")
+```
+
+### France
+
+```{r, fig.height=12}
+p_france <- holidays %>% 
+  mutate(country_code = tolower(countrycode(country, origin = "country.name", destination = "iso2c")),
+         country_name = country,
+         date_short = format(date_parsed, "%d %b %Y")) %>% 
+  filter(independence_from %in% c("France"),
+         country != "Micronesia",
+         event_commemorated_and_notes %nin% c("Effective date when French Upper Volta became an autonomous republic in the French Community",
+                                              "Effective date when Chad became an autonomous republic in the French Community[36]"
+                                              ),
+         name_of_holiday %nin% c("National Day", "Republic Day")) %>% 
+  mutate(country = reorder_within(country, desc(date_parsed), independence_from)) %>% 
+  ggplot(aes(y = country, x = date_parsed, country = country_code)) +
+  geom_flag()+
+  geom_point(shape =1, size = 6) +
+  theme_ipsum() +
+  theme(panel.grid.minor.y = element_blank(),
+        panel.grid.major.y = element_blank(),
+        axis.text.y = element_blank()) +
+  scale_y_reordered() +
+  geom_label(aes(x = date_parsed +500, y = country,
+                 label = paste0(country_name, ": ", date_mdy, " ",sep = "")),
+             label.size = NA,
+             hjust = 0,
+             family = "Arial Narrow") +
+  scale_x_date(limits = c(as.Date("1942-01-01"), as.Date("2000-01-01")), 
+               breaks = c(as.Date("1940-01-01"),
+                          as.Date("1950-01-01"),
+                          as.Date("1960-01-01"),
+                          as.Date("1970-01-01"),
+                          as.Date("1980-01-01")),
+               date_labels = c("1940", "1950", "1960", "1970", "1980")) +
+  labs(x = "", y = "", title= "Days on which independence from France is celebrated", caption = "Haiti: January 1, 1804")
+```
+
+### How many countries from each colonizer?
+
+```{r}
+holidays %>% 
+  group_by(independence_from) %>% 
+  select(date_parsed) %>%
+  distinct() %>% 
+  count %>% 
+  arrange(desc(n))
+
+holidays %>% 
+  select(date_of_holiday) %>% 
+  distinct() %>% 
+  count
+
+```
+
+### How many days per year per colonizer
+
+```{r}
+independence_days <- data.frame(country = c("United Kingdom", "France", "Spanish Empire", "Soviet Union", "Ottoman Empire", "Portugal", "All others"), number = c(46,22,13,11,7,7,29) )
+```
+
+
+### Donut chart
+
+https://www.r-graph-gallery.com/128-ring-or-donut-plot.html
+
+```{r}
+independence_days$fraction <- independence_days$n / sum(independence_days$n)
+independence_days$ymax <- cumsum(independence_days$fraction)
+independence_days$ymin <- c(0, head(independence_days$ymax, n=-1))
+independence_days$labelPosition <- (independence_days$ymax + independence_days$ymin) / 2
+
+independence_days$label_inside <- paste0(independence_days$number)
+independence_days$label_outside <- str_wrap(independence_days$country, width =10)
+
+p_donut <- ggplot(independence_days, aes(ymax=ymax, ymin=ymin, xmax=2.5, xmin=1, fill=country)) +
+  geom_rect() +
+  geom_text( x=1.7, aes(y=labelPosition, label=label_inside, color=country), size=4, color = "white", family= "Arial Narrow") + 
+  scale_color_jco() +
+  scale_fill_jco() +
+  geom_text(x=4, aes(y=labelPosition, label=label_outside, color=country), size=3.5, family= "Arial Narrow", lineheight = 0.9) +
+  coord_polar(theta="y") +
+  xlim(c(-1, 4)) +
+  theme_void() +
+  theme(legend.position = "none",
+        plot.title = element_text(hjust = 0.5, vjust = -7, family= "Arial Narrow", size = 12),
+        ) +
+  labs(title= str_wrap("A full calender: Total yearly days on which independence from former hegemons is celebrated", width = 30))
+
+p_donut
+```
+
+
+
+```{r}
+p_uk_full <- p_uk + inset_element(p_donut, 0.01,0,0.5,0.5) + plot_annotation(caption = "Data = Wikipedia | Graphic: @TannerFlorian") + theme(plot.caption = element_text(family = "Arial Narrow", vjust = 10))
+p_uk_full
+```
+```{r}
+p_france_full <- p_france + inset_element(p_donut, 0.01,0,0.5,0.5) + plot_annotation(caption = "Data = Wikipedia | Graphic: @TannerFlorian") + theme(plot.caption = element_text(family = "Arial Narrow", vjust = 10))
+p_france_full
+```
+
+
+```{r}
+ggsave(filename = "uk_independence.png", device = "png",plot = p_uk_full, units = "cm", height = 30, width = 16, limitsize = FALSE)
+ggsave(filename = "france_independence.png", device = "png",plot = p_france, units = "cm", height = 20, width = 16, limitsize = FALSE)
+```
+
+
+### Soviet Union 
+
+```{r}
+holidays %>% 
+  mutate(country_code = tolower(countrycode(country, origin = "country.name", destination = "iso2c")),
+         country_name = country) %>% 
+  filter(independence_from %in% c("Soviet Union"),
+         country != "Micronesia",
+         event_commemorated_and_notes %nin% c()) %>% 
+  mutate(country = reorder_within(country, desc(date_parsed), independence_from)) %>% 
+  ggplot(aes(y = country, x = date_parsed, country = country_code)) +
+  geom_flag()+
+  geom_point(shape =1, size = 6) +
+  theme_ipsum() +
+  theme(panel.grid.minor.y = element_blank(),
+        panel.grid.major.y = element_blank(),
+        axis.text.y = element_blank()) +
+  scale_y_reordered() +
+  geom_label(aes(x = date_parsed + 70, y = country,
+                 label = paste0(country_name, ": ", date_mdy, " ",sep = "")),
+             label.size = NA,
+             hjust = 0,
+             family = "Arial Narrow") +
+  scale_x_date(limits = c(as.Date("1990-01-01"), as.Date("1993-06-01"))) +
+  labs(x = "", y = "", title= "Days on which independence from the Soviet Union is celebrated")
+```
+
+### Spanish Empire
+
+```{r, fig.height = 8}
+holidays %>% 
+  mutate(country_code = tolower(countrycode(country, origin = "country.name", destination = "iso2c")),
+         country_name = country) %>% 
+  filter(independence_from %in% c("Spanish Empire"),
+         country != "Micronesia",
+         year > 1800,
+         year < 1840,
+         event_commemorated_and_notes != "Battle of Pichincha") %>% 
+  mutate(country = reorder_within(country, date_parsed, independence_from)) %>% 
+  ggplot(aes(y = country, x = date_parsed, country = country_code)) +
+  geom_flag()+
+  geom_point(shape =1, size = 6) +
+  theme_ipsum() +
+  theme(panel.grid.minor.y = element_blank(),
+        panel.grid.major.y = element_blank(),
+        axis.text.y = element_blank()) +
+  scale_y_reordered() +
+  geom_label(aes(x = date_parsed + 2000, y = country,
+                 label = paste0(country_name, ": ", date_mdy, " ",sep = "")),
+             label.size = NA,
+             hjust = 0,
+             family = "Arial Narrow") +
+  scale_x_date(limits = c(as.Date("1800-01-01"), as.Date("1900-01-01")))+
+  labs(x = "", y = "", title= "Days on which independence from the Spanish Empire is celebrated")
+```
+
+```{r}
+sessionInfo()
+```
+
+
