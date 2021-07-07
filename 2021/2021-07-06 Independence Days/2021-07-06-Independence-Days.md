@@ -214,14 +214,14 @@ p_donut
 ![](2021-07-06-Independence-Days_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 ``` r
-p_uk_full <- p_uk + inset_element(p_donut, 0.01,0,0.5,0.5) + plot_annotation(caption = "Data = Wikipedia | Graphic: @TannerFlorian") + theme(plot.caption = element_text(family = "Arial Narrow", vjust = 10))
+p_uk_full <- p_uk + inset_element(p_donut, 0.01,0,0.5,0.5) + plot_annotation(caption = "Data = Wikipedia / @ivelasq3 | Graphic: @TannerFlorian") + theme(plot.caption = element_text(family = "Arial Narrow", vjust = 10))
 p_uk_full
 ```
 
 ![](2021-07-06-Independence-Days_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
 ``` r
-p_france_full <- p_france + inset_element(p_donut, 0.01,0,0.5,0.5) + plot_annotation(caption = "Data = Wikipedia | Graphic: @TannerFlorian") + theme(plot.caption = element_text(family = "Arial Narrow", vjust = 10))
+p_france_full <- p_france + inset_element(p_donut, 0.01,0,0.5,0.5) + plot_annotation(caption = "Data = Wikipedia / @ivelasq3 | Graphic: @TannerFlorian") + theme(plot.caption = element_text(family = "Arial Narrow", vjust = 10))
 p_france_full
 ```
 

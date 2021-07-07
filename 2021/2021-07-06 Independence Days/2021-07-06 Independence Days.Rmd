@@ -178,11 +178,11 @@ p_donut
 
 
 ```{r}
-p_uk_full <- p_uk + inset_element(p_donut, 0.01,0,0.5,0.5) + plot_annotation(caption = "Data = Wikipedia | Graphic: @TannerFlorian") + theme(plot.caption = element_text(family = "Arial Narrow", vjust = 10))
+p_uk_full <- p_uk + inset_element(p_donut, 0.01,0,0.5,0.5) + plot_annotation(caption = "Data = Wikipedia / @ivelasq3 | Graphic: @TannerFlorian") + theme(plot.caption = element_text(family = "Arial Narrow", vjust = 10))
 p_uk_full
 ```
 ```{r}
-p_france_full <- p_france + inset_element(p_donut, 0.01,0,0.5,0.5) + plot_annotation(caption = "Data = Wikipedia | Graphic: @TannerFlorian") + theme(plot.caption = element_text(family = "Arial Narrow", vjust = 10))
+p_france_full <- p_france + inset_element(p_donut, 0.01,0,0.5,0.5) + plot_annotation(caption = "Data = Wikipedia / @ivelasq3 | Graphic: @TannerFlorian") + theme(plot.caption = element_text(family = "Arial Narrow", vjust = 10))
 p_france_full
 ```
 
