@@ -4,6 +4,14 @@ This repo contains selected [TidyTuesday](https://github.com/rfordatascience/tid
 
 ---
 
+## 2021-07-06 Independence Days
+
+[Code](https://github.com/FCTanner/tidy_tuesday/blob/main/2021/2021-07-06%20Independence%20Days/2021-07-06-Independence-Days.md)
+
+![alt text](https://github.com/FCTanner/tidy_tuesday/blob/main/2021/2021-07-06%20Independence%20Days/uk_independence.png)
+
+---
+
 ## 2021-06-29 Animal Rescues
 
 [Code](https://github.com/FCTanner/tidy_tuesday/blob/main/2021/2021-06-29%20Animal%20Rescues/2021-06-29-Animal-Rescues.md)
