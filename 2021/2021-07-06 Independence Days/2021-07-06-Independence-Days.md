@@ -61,13 +61,29 @@ holidays %>%
 
 ### United Kingdom
 
+#### Update Cyprus and USA
+
 ``` r
-p_uk <- holidays %>% 
+full_british_holidays <-holidays %>% 
+  mutate(country = str_replace(country, "Micronesia", "Federated States of Micronesia")) %>% 
   mutate(country_code = tolower(countrycode(country, origin = "country.name", destination = "iso2c")),
          country_name = str_replace(country, "Saint Vincent and the Grenadines", "St Vincent at. Grndns"),
          date_short = format(date_parsed, "%d %b %Y")) %>% 
-  filter(independence_from == "United Kingdom",
-         country %nin% c("Micronesia", "Cyprus")) %>% 
+  filter(!is.na(year_of_event), # This removes Cyprus "National Day"
+         independence_from %in% c("United Kingdom", "Egypt and the United Kingdom",
+                                  "Australia, New Zealand and the United Kingdom",
+                                  "Italy and United Kingdom",
+                                  "Kingdom of Great Britain",
+                                  "United Kingdom and France",
+                                  "United Kingdom and the British Mandate for Palestine",
+                                  "United Kingdom of Great Britain and Ireland",
+                                  "United Kingdom of Portugal, Brazil and the Algarves"))
+```
+
+#### Plot
+
+``` r
+p_uk <- full_british_holidays %>% 
   mutate(country = reorder_within(country, desc(date_parsed), independence_from)) %>% 
   ggplot(aes(y = country, x = date_parsed, country = country_code)) +
   geom_flag()+
@@ -90,10 +106,15 @@ p_uk <- holidays %>%
                           as.Date("1980-01-01"),
                           as.Date("2000-01-01")),
                date_labels = c("1920", "1940", "1960", "1980", "2000")) +
-  labs(x = "", y = "", title= "Celebrations of independence from the United Kingdom")
-```
+  labs(x = "", y = "", title= "Celebrations of independence from the United Kingdom") +
+  ## Manually add United States
+  geom_label(aes(x= as.Date("2000-01-01"), y = 50, 
+                 label = str_wrap("The US celebrate independence from the Kingdom of Great Britain on 04 July 1776", 15)), hjust = 0, size = 3.5) +
+  geom_flag(aes(x= as.Date("2020-01-01"), y = 52.8, country = "us")) +
+  geom_point(aes(x= as.Date("2020-01-01"), y = 52.8), shape =1, size = 6)
 
-    ## Warning in countrycode(country, origin = "country.name", destination = "iso2c"): Some values were not matched unambiguously: Micronesia
+# p_uk
+```
 
 ### France
 
@@ -178,7 +199,7 @@ holidays %>%
 ### How many days per year per colonizer
 
 ``` r
-independence_days <- data.frame(country = c("United Kingdom", "France", "Spanish Empire", "Soviet Union", "Ottoman Empire", "Portugal", "All others"), number = c(46,22,13,11,7,7,29) )
+independence_days <- data.frame(country = c("United Kingdom", "France", "Spanish Empire", "Soviet Union", "Ottoman Empire", "Portugal", "All others"), number = c(47,22,13,11,7,7,29) )
 ```
 
 ### Donut chart
@@ -211,17 +232,15 @@ p_donut <- ggplot(independence_days, aes(ymax=ymax, ymin=ymin, xmax=2.5, xmin=1,
 p_donut
 ```
 
-![](2021-07-06-Independence-Days_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
-
-``` r
-p_uk_full <- p_uk + inset_element(p_donut, 0.01,0,0.5,0.5) + plot_annotation(caption = "Data = Wikipedia / @ivelasq3 | Graphic: @TannerFlorian") + theme(plot.caption = element_text(family = "Arial Narrow", vjust = 10))
-p_uk_full
-```
-
 ![](2021-07-06-Independence-Days_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
 ``` r
-p_france_full <- p_france + inset_element(p_donut, 0.01,0,0.5,0.5) + plot_annotation(caption = "Data = Wikipedia / @ivelasq3 | Graphic: @TannerFlorian") + theme(plot.caption = element_text(family = "Arial Narrow", vjust = 10))
+p_uk_full <- p_uk + inset_element(p_donut, 0.01,0,0.5,0.5) + plot_annotation(caption = "Data = Wikipedia / @ivelasq3 | Graphic: @TannerFlorian") + theme(plot.caption = element_text(family = "Arial Narrow", vjust = 10))
+# p_uk_full
+```
+
+``` r
+p_france_full <- p_france + inset_element(p_donut, 0.01,0,0.5,0.5) + plot_annotation(caption = "Independence Days from the United Kingdom and those with British involvement\nData = Wikipedia / @ivelasq3 | Graphic: @TannerFlorian") + theme(plot.caption = element_text(family = "Arial Narrow", vjust = 10))
 p_france_full
 ```
 
@@ -231,10 +250,19 @@ p_france_full
 
     ## Warning: Removed 1 rows containing missing values (geom_label).
 
-![](2021-07-06-Independence-Days_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+![](2021-07-06-Independence-Days_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
 ``` r
-ggsave(filename = "uk_independence.png", device = "png",plot = p_uk_full, units = "cm", height = 30, width = 16, limitsize = FALSE)
+ggsave(filename = "uk_independence.png", device = "png",plot = p_uk_full, units = "cm", height = 34, width = 16, limitsize = FALSE)
+```
+
+    ## Warning: Removed 2 rows containing missing values (geom_flag).
+
+    ## Warning: Removed 2 rows containing missing values (geom_point).
+
+    ## Warning: Removed 2 rows containing missing values (geom_label).
+
+``` r
 ggsave(filename = "france_independence.png", device = "png",plot = p_france, units = "cm", height = 20, width = 16, limitsize = FALSE)
 ```
 
@@ -273,7 +301,7 @@ holidays %>%
 
     ## Warning in countrycode(country, origin = "country.name", destination = "iso2c"): Some values were not matched unambiguously: Micronesia
 
-![](2021-07-06-Independence-Days_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+![](2021-07-06-Independence-Days_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 ### Spanish Empire
 
@@ -306,7 +334,7 @@ holidays %>%
 
     ## Warning in countrycode(country, origin = "country.name", destination = "iso2c"): Some values were not matched unambiguously: Micronesia
 
-![](2021-07-06-Independence-Days_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](2021-07-06-Independence-Days_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
 ``` r
 sessionInfo()

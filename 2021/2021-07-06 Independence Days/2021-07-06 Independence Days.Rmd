@@ -51,14 +51,32 @@ holidays %>%
 ```
 
 
+
 ### United Kingdom 
+
+#### Update Cyprus and USA
+
 ```{r}
-p_uk <- holidays %>% 
+full_british_holidays <-holidays %>% 
+  mutate(country = str_replace(country, "Micronesia", "Federated States of Micronesia")) %>% 
   mutate(country_code = tolower(countrycode(country, origin = "country.name", destination = "iso2c")),
          country_name = str_replace(country, "Saint Vincent and the Grenadines", "St Vincent at. Grndns"),
          date_short = format(date_parsed, "%d %b %Y")) %>% 
-  filter(independence_from == "United Kingdom",
-         country %nin% c("Micronesia", "Cyprus")) %>% 
+  filter(!is.na(year_of_event), # This removes Cyprus "National Day"
+         independence_from %in% c("United Kingdom", "Egypt and the United Kingdom",
+                                  "Australia, New Zealand and the United Kingdom",
+                                  "Italy and United Kingdom",
+                                  "Kingdom of Great Britain",
+                                  "United Kingdom and France",
+                                  "United Kingdom and the British Mandate for Palestine",
+                                  "United Kingdom of Great Britain and Ireland",
+                                  "United Kingdom of Portugal, Brazil and the Algarves"))
+```
+
+
+#### Plot 
+```{r, fig.height = 12}
+p_uk <- full_british_holidays %>% 
   mutate(country = reorder_within(country, desc(date_parsed), independence_from)) %>% 
   ggplot(aes(y = country, x = date_parsed, country = country_code)) +
   geom_flag()+
@@ -81,7 +99,14 @@ p_uk <- holidays %>%
                           as.Date("1980-01-01"),
                           as.Date("2000-01-01")),
                date_labels = c("1920", "1940", "1960", "1980", "2000")) +
-  labs(x = "", y = "", title= "Celebrations of independence from the United Kingdom")
+  labs(x = "", y = "", title= "Celebrations of independence from the United Kingdom") +
+  ## Manually add United States
+  geom_label(aes(x= as.Date("2000-01-01"), y = 50, 
+                 label = str_wrap("The US celebrate independence from the Kingdom of Great Britain on 04 July 1776", 15)), hjust = 0, size = 3.5) +
+  geom_flag(aes(x= as.Date("2020-01-01"), y = 52.8, country = "us")) +
+  geom_point(aes(x= as.Date("2020-01-01"), y = 52.8), shape =1, size = 6)
+
+# p_uk
 ```
 
 ### France
@@ -141,7 +166,7 @@ holidays %>%
 ### How many days per year per colonizer
 
 ```{r}
-independence_days <- data.frame(country = c("United Kingdom", "France", "Spanish Empire", "Soviet Union", "Ottoman Empire", "Portugal", "All others"), number = c(46,22,13,11,7,7,29) )
+independence_days <- data.frame(country = c("United Kingdom", "France", "Spanish Empire", "Soviet Union", "Ottoman Empire", "Portugal", "All others"), number = c(47,22,13,11,7,7,29) )
 ```
 
 
@@ -179,16 +204,16 @@ p_donut
 
 ```{r}
 p_uk_full <- p_uk + inset_element(p_donut, 0.01,0,0.5,0.5) + plot_annotation(caption = "Data = Wikipedia / @ivelasq3 | Graphic: @TannerFlorian") + theme(plot.caption = element_text(family = "Arial Narrow", vjust = 10))
-p_uk_full
+# p_uk_full
 ```
 ```{r}
-p_france_full <- p_france + inset_element(p_donut, 0.01,0,0.5,0.5) + plot_annotation(caption = "Data = Wikipedia / @ivelasq3 | Graphic: @TannerFlorian") + theme(plot.caption = element_text(family = "Arial Narrow", vjust = 10))
+p_france_full <- p_france + inset_element(p_donut, 0.01,0,0.5,0.5) + plot_annotation(caption = "Independence Days from the United Kingdom and those with British involvement\nData = Wikipedia / @ivelasq3 | Graphic: @TannerFlorian") + theme(plot.caption = element_text(family = "Arial Narrow", vjust = 10))
 p_france_full
 ```
 
 
 ```{r}
-ggsave(filename = "uk_independence.png", device = "png",plot = p_uk_full, units = "cm", height = 30, width = 16, limitsize = FALSE)
+ggsave(filename = "uk_independence.png", device = "png",plot = p_uk_full, units = "cm", height = 34, width = 16, limitsize = FALSE)
 ggsave(filename = "france_independence.png", device = "png",plot = p_france, units = "cm", height = 20, width = 16, limitsize = FALSE)
 ```
 
