@@ -4,6 +4,15 @@ This repo contains selected [TidyTuesday](https://github.com/rfordatascience/tid
 
 ---
 
+
+## 2021-07-20 US Droughts
+
+[Code](https://github.com/FCTanner/tidy_tuesday/blob/main/2021/2021-07-20%20US%20Droughts/2021-07-20-US-Droughts.md)
+
+![alt text](https://github.com/FCTanner/tidy_tuesday/blob/main/2021/2021-07-20%20US%20Droughts/drought_map.png)
+
+---
+
 ## 2021-07-06 Independence Days
 
 [Code](https://github.com/FCTanner/tidy_tuesday/blob/main/2021/2021-07-06%20Independence%20Days/2021-07-06-Independence-Days.md)
