@@ -1,0 +1,89 @@
+---
+title: "2021-07-20 US Droughts"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+.libPaths("C:/R-packages2/")
+knitr::opts_chunk$set(echo = TRUE)
+rm(list = ls())
+```
+
+```{r, message= FALSE, marning = FALSE, echo = FALSE}
+library(tidyverse)
+library(usmap)
+extrafont::loadfonts(device = "win", quiet = TRUE)
+
+`%nin%` <- Negate(`%in%`)
+```
+
+## Read data 
+
+```{r}
+drought <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-07-20/drought.csv')
+```
+
+## EDA 
+* Percentage of state in extreme or exceptional drought
+* Use last reported week 
+* D3 
+
+Potential deeper analysis
+* Compare this to other years
+* Average over seasons/ months
+  * This data only extends to 2001, so comparisons are difficult
+
+
+```{r}
+drought %>% 
+  filter(valid_start == "2021-07-13",
+         state_abb == "CA")
+```
+
+```{r}
+drought_summary <- drought %>% 
+  filter(valid_start == "2021-07-13",
+         drought_lvl %in% c("D3", "D4")) %>% 
+  pivot_wider(id_cols = state_abb, names_from = drought_lvl, values_from = area_pct) %>% 
+  mutate(drought = as.integer(D4 + (D3 - D4)),
+         fips = fips(state_abb)) %>% 
+  select(fips, drought)
+```
+
+
+
+```{r}
+scale_color_high <- "#b30000"
+scale_color_low <- "#e6e6e6"
+credits <- "The U.S. Drought Monitor is jointly produced by the National Drought Mitigation Center at the University of Nebraska-Lincoln, the United States Department of Agriculture, and the National Oceanic and Atmospheric Administration."
+
+ 
+p_map <- plot_usmap(data = drought_summary, values = "drought", color = "#747474",
+           labels = TRUE) + 
+  labs(title = "Drought in mid-July 2021",
+       subtitle = "Percentage of area in extreme drought or exceptional drought, the two most severe categories",
+       caption = paste0(str_wrap(credits), "\n\nGraphic: @TannerFlorian")) + 
+  scale_fill_continuous(low = scale_color_low, high = scale_color_high, 
+                         name = "", limits = c(0,100)) +
+  theme(panel.background=element_blank(),
+        legend.position = "right")
+
+p_map$layers[[2]]$aes_params$size <- 2
+p_map
+```
+
+```{r}
+ggsave(p_map, filename = "drought_map.png", device = "png", units = "cm", width = 14, height = 12, scale = 1, type = "cairo")
+```
+
+
+### Credit
+
+The U.S. Drought Monitor is jointly produced by the National Drought Mitigation Center at the University of Nebraska-Lincoln, the United States Department of Agriculture, and the National Oceanic and Atmospheric Administration. Map courtesy of NDMC.
+
+
+```{r}
+sessionInfo()
+```
+
+
