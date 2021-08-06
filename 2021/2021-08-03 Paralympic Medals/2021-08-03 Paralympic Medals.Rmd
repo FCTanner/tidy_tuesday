@@ -1,0 +1,128 @@
+---
+title: "2021-08-03 Paralympic Medals"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+.libPaths("C:/R-packages2/")
+knitr::opts_chunk$set(echo = TRUE)
+rm(list = ls())
+```
+
+```{r, message= FALSE, marning = FALSE, echo = FALSE}
+library(tidyverse)
+library(countrycode)
+library(tidytext)
+extrafont::loadfonts(device = "win", quiet = TRUE)
+
+`%nin%` <- Negate(`%in%`)
+```
+
+## Read data 
+
+```{r}
+olympics <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-07-27/olympics.csv')
+athletes <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-08-03/athletes.csv')
+```
+
+## Aim
+
+Reproduce this graph by The Economist Graphic Detail
+https://www.economist.com/graphic-detail/2021/07/25/which-is-the-strongest-olympic-team-of-all-time
+
+## EDA Paralympics
+
+* Why so many missing country names? 
+* Need to manually add event locations
+
+
+```{r}
+skimr::skim(athletes)
+```
+
+```{r}
+disciplines <- athletes %>% select(event) %>% distinct
+disciplines
+```
+
+Observations:
+* Data is for summer paralympics
+
+## Summarise data
+
+```{r}
+country_medal_shares <- athletes %>% 
+  filter(!is.na(abb)) %>% 
+  group_by(abb, year) %>% 
+  summarise(medal_count = n()) %>% 
+  mutate(country_fill = countrycode(abb, origin= 'ioc', destination = 'country.name')) %>% 
+  ungroup() %>% 
+  group_by(year) %>% 
+  mutate(total_medals = sum(medal_count),
+         medals_share = 100* medal_count/total_medals)
+
+```
+## Manually fill country_fill
+
+```{r}
+country_medal_shares$country_fill[country_medal_shares$abb == "URS"] <- "Soviet Union"
+country_medal_shares$country_fill[country_medal_shares$abb == "SCG"] <- "Serbia and Montenegro"
+country_medal_shares$country_fill[country_medal_shares$abb == "FRO"] <- "Faroe Islands"
+country_medal_shares$country_fill[country_medal_shares$abb == "YUG"] <- "Yugoslavia"
+country_medal_shares$country_fill[country_medal_shares$abb == "EUN"] <- "Unified Team"
+country_medal_shares$country_fill[country_medal_shares$abb == "BIR"] <- "Burma"
+country_medal_shares$country_fill[country_medal_shares$abb == "GDR"] <- "East Germany"
+country_medal_shares$country_fill[country_medal_shares$abb == "TCH"] <- "Czechoslovakia"
+country_medal_shares$country_fill[country_medal_shares$abb == "FRG"] <- "West Germany"
+country_medal_shares$country_fill[country_medal_shares$abb == "IPP"] <- "Independent Paralympic Participants"
+```
+
+
+### Top teams
+
+
+
+```{r}
+top_three_per_year <- country_medal_shares %>% 
+  mutate(country_fill = as.factor(country_fill)) %>% 
+  group_by(year) %>% 
+  slice_max(medals_share, n = 3)
+
+```
+
+
+Add grouping variable
+```{r}
+levels <- data.frame(levels = rep(c("3rd", "2nd", "1st"), 10))
+top_three_per_year <- cbind(top_three_per_year, levels)
+```
+
+
+Host nations
+```{r}
+host_nations <- data.frame(year = seq(1980, 2016, 4), host = c("Netherlands", "United States", "South Korea", "Spain", "United States", "Australia", "Greece", "China", "United Kingdom", "Brazil"))
+```
+
+
+```{r}
+top_three_per_year %>%
+  left_join(host_nations) %>% 
+  mutate(country= fct_reorder(country_fill, medals_share),
+         year = as.factor(year)) %>%
+  ggplot(aes(x = year, 
+             y = medals_share,
+             fill = country, 
+             group = levels)) +
+  geom_col(color = "white", position = position_stack()) + 
+  labs(title = "Home advantage",
+       subtitle = "Share of Paralympic medals won, top three teams at each summer games, %\n\U25A1 Host nation ")
+```
+
+
+
+
+```{r}
+sessionInfo()
+```
+
+
