@@ -2,6 +2,15 @@
 
 This repo contains selected [TidyTuesday](https://github.com/rfordatascience/tidytuesday) analyses. Folders include original scripts and Rmarkdown documents. See below for some graphs from the individual analyses. 
 
+
+---
+
+## 2021-08-03 Paralympic Medals 
+
+[Code](https://github.com/FCTanner/tidy_tuesday/blob/main/2021/2021-08-03%20Paralympic%20Medals/2021-08-03-Paralympic-Medals.md)
+
+![alt text](https://github.com/FCTanner/tidy_tuesday/blob/main/2021/2021-08-03%20Paralympic%20Medals/paralympics.png)
+
 ---
 
 
