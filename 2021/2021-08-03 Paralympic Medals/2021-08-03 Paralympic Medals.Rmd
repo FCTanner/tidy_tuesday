@@ -111,10 +111,7 @@ host_in_top$is_host_nation[host_in_top$country_fill == host_in_top$host] <- "yes
 Paralympics theme
 
 ```{r}
-color_scheme1 <- c("#e8f7ee","#b8c4bb","#663f46","#3c362a","#c9d6ea","#fe5d26","#e85f5c","#004e64","#736ced")
 color_scheme2 <- c("#dfd9e2","#c3acce","#89909f","#538083","#2a7f62","#82d173","#4c2c69","#42253b","#084b83")
-color_scheme3 <- c("#94e8b4","#72bda3","#5e8c61","#4e6151","#3b322c","#e3170a","#f7b32b","#2d1e2f","#e0a890")
-color_scheme4 <- c("#bbd8b3","#f3b61f","#a29f15","#510d0a","#191102","#424c55","#886f68","#3d2c2e","#9590a8")
 
 paralympics_theme <- theme_ipsum() +
   theme(
@@ -125,8 +122,6 @@ paralympics_theme <- theme_ipsum() +
         panel.grid.minor.x = element_blank())
 
 label_family = "Arial Narrow"
-bold_label_family = "Arial"
-
 ```
 
 
@@ -154,7 +149,13 @@ p <- host_in_top %>%
   annotate(geom = "text", x = 2008, y = 30, label = "Australia", family= label_family) +
   annotate(geom = "text", x = 1980, y = 28, label = "Poland", family= label_family) +
   annotate(geom = "text", x = 2012, y = 28, label = "Russia", family = label_family, color = "white") + 
+  annotate(geom  = "segment", x = 1982.02, xend = 1985.98, y = 13, yend = 13, size = 1.15) +
+  annotate(geom  = "segment", x = 1994.02, xend = 1997.98, y = 22, yend = 22, size = 1.15) +
+    annotate(geom  = "segment", x = 1998.02, xend = 2001.98, y = 8.5, yend = 8.5, size = 1.15) +
+      annotate(geom  = "segment", x = 2006.02, xend = 2009.98, y = 18.5, yend = 18.5, size = 1.15) +
   paralympics_theme
+
+p
 ```
 
 
