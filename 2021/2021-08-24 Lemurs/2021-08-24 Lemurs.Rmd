@@ -11,6 +11,7 @@ rm(list = ls())
 ```{r, message= FALSE, marning = FALSE, echo = FALSE}
 library(tidyverse)
 library(ggridges)
+library(lubridate)
 extrafont::loadfonts(device = "win", quiet = TRUE)
 
 `%nin%` <- Negate(`%in%`)
@@ -135,9 +136,9 @@ dat %>%
   group_by(common_name, dlc_id) %>% 
   summarise(avg_weight = mean(weight_g)) %>% 
   ggplot(aes(x = avg_weight, y = reorder(common_name, avg_weight, FUN = mean))) +
-  geom_jitter(alpha = 0.15, height = 0.15, width = 0) + 
+  geom_jitter(alpha = 0.1, height = 0.15, width = 0) + 
   stat_summary(fun = mean, color = "red", shape = 73, size = 1) + 
-  labs(y = "", x = "Weight in grams", title = "Average weight of lemurs over the span of adulthood") +
+  labs(y = "", x = "Weight in grams", title = "Average weight of captive lemurs over the span of adulthood") +
   theme_classic()
 ```
 
@@ -207,13 +208,23 @@ dat %>%
 ```{r}
 dat %>% 
   filter(birth_type != "Unk",
-         common_name != "hybrid") %>% 
+         common_name != "hybrid",
+         !is.na(estimated_concep)) %>% 
   mutate(common_name = as.factor(common_name),
-         concep_month = lubridate::month(as.Date(estimated_concep))) %>% 
-  ggplot(aes(x = concep_month, y = reorder(common_name, concep_month, FUN = mean), group= common_name, color = concep_month)) +
-  geom_density_ridges_gradient() +
-  scale_y_date() +
-  theme_ridges()
+         estimated_month_numeric = month(estimated_concep),
+         estimated_month_character = month(estimated_concep, label = TRUE),
+         estimated_month_character = fct_relevel(estimated_month_character, 
+            "Jul", "Aug", 
+            "Sep", "Oct", "Nov",
+            "Dec", "Jan", "Feb", 
+            "Mar", "Apr", "May", "Jun")) %>% 
+  ggplot(aes(x = estimated_month_character, y = reorder(common_name, estimated_month_numeric, FUN = mean), 
+             group= common_name)) +
+  geom_density_ridges() + 
+  scale_fill_cyclical(values = c("grey", "red", "blue")) + 
+  theme_ridges() +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank())
 ```
 
 
