@@ -10,6 +10,7 @@ rm(list = ls())
 
 ```{r, message= FALSE, marning = FALSE, echo = FALSE}
 library(tidyverse)
+library(ggridges)
 extrafont::loadfonts(device = "win", quiet = TRUE)
 
 `%nin%` <- Negate(`%in%`)
@@ -24,30 +25,198 @@ extrafont::loadfonts(device = "win", quiet = TRUE)
 lemurs <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-08-24/lemur_data.csv')
 lemurs$taxon[lemurs$taxon == "CMED"] <- "CMEAD"
 taxons <- readxl::read_xlsx("taxons.xlsx") %>% janitor::clean_names()
+
+dat <- lemurs %>% left_join(taxons)
 ```
 ## Ideas 
 
 * Popularity of names of lemurs (names assigned at Duke Lemur Center)
+  * All lemurs in the dataset have names though 
+* Which names for which species, at which center, over time...
+* What about the movie Madagascar? -> did that have an influence? came out in 2005
+* "Julien the ring-tailed lemur, Maurice the aye-aye, and Mort the mouse lemur"
 
+* Weight of various species, lifespan per species
+* Differences between wild-born or captivity born
+  * Does something change when more and more generations are born in captivity? 
+  
+* Seasonal breeding
+
+## Observations
+* There are only 2270 individuals in the dataset
+* Names are assigned to two lemurs max 
 
 
 ## EDA Lemurs
 
 ```{r}
-skimr::skim(lemurs)
+skimr::skim(dat)
 ```
 
 ```{r}
-lemurs %>% 
-  left_join(taxons) %>% 
-  group_by(common_name, taxon) %>% 
+dat %>% 
+  group_by(common_name) %>% 
   count() %>% 
   arrange(desc(n))
 
+dat %>% 
+  group_by(name) %>% 
+  count() %>% 
+  arrange(n)
 
+length(unique(dat$name))
+length(unique(dat$dlc_id))
 ```
 
-  
+* No 
+
+```{r}
+names <- dat %>% 
+  # filter(!is.na(name),
+  #        common_name %in% c("Gray mouse lemur",
+  #                       "Ring-tailed lemur",
+  #                       "Aye-aye"),
+  #        hybrid == "N",
+  #        sex == "M") %>% 
+  select(dob, dlc_id, common_name, name) %>% 
+  distinct() %>% 
+  mutate(birth_year = lubridate::floor_date(dob, "years")) %>% 
+  group_by(common_name, birth_year) %>% 
+  mutate(total_specimens_oer_year = n()) %>% 
+  ungroup() %>% 
+  group_by(name) %>% 
+  count() %>% 
+  arrange(desc(n))
+```
+
+
+## The real Maurice
+
+* This is the only lemur with a name from the movie Madagascar, however he was born before the movie came out. 
+* I will look at something else instead.
+
+```{r}
+dat %>% 
+  filter(name == 
+           "MAURICE")
+```
+## Weight and lifespan
+
+```{r}
+dat %>% 
+  ggplot(aes(x = age_at_wt_d, y = weight_g, group = dlc_id)) +
+  geom_line() +
+  facet_wrap(~common_name, scales = "fixed")
+```
+
+## Lifespan
+
+```{r}
+dat %>% 
+  filter(age_category != "IJ",
+         common_name != "hybrid") %>% 
+  mutate(common_name = as.factor(common_name)) %>% 
+  select(common_name, dlc_id, age_max_live_or_dead_y) %>% 
+  distinct() %>% 
+  ggplot(aes(x = age_max_live_or_dead_y, y = reorder(common_name, age_max_live_or_dead_y, FUN = mean))) +
+  geom_jitter(alpha = 0.2, height = 0.15, width = 0) + 
+  stat_summary(fun = mean, color = "red", shape = 73, size = 1) + 
+  labs(y = "", x = "Years", title = "Life span of lemurs (that reach adulthood)") +
+  theme_classic()
+```
+## Weight
+* Coquerel's sifaka = outlier?
+
+```{r}
+dat %>% 
+  filter(age_category != "IJ",
+         common_name != "hybrid") %>% 
+  mutate(common_name = as.factor(common_name)) %>% 
+  group_by(common_name, dlc_id) %>% 
+  summarise(avg_weight = mean(weight_g)) %>% 
+  ggplot(aes(x = avg_weight, y = reorder(common_name, avg_weight, FUN = mean))) +
+  geom_jitter(alpha = 0.15, height = 0.15, width = 0) + 
+  stat_summary(fun = mean, color = "red", shape = 73, size = 1) + 
+  labs(y = "", x = "Weight in grams", title = "Average weight of lemurs over the span of adulthood") +
+  theme_classic()
+```
+
+```{r}
+dat %>% 
+  filter(name == "SABINA")
+```
+
+
+# Difference between wild-born and captivity -born? 
+## Summary stats wild-born and captivity-born
+
+```{r}
+avg_wild_born <- dat %>% 
+  filter(age_category != "IJ",
+         birth_type == "WB") %>% 
+  group_by(common_name) %>% 
+  summarise(avg_weight = mean(weight_g))
+
+n_wild_born <- dat %>% 
+  filter(age_category != "IJ",
+         birth_type == "WB") %>% 
+  select(common_name, dlc_id) %>% 
+  distinct() %>% 
+  group_by(common_name) %>% 
+  summarize(n_individuals = n())
+```
+
+```{r}
+avg_cap_born <- dat %>% 
+  filter(age_category != "IJ",
+         birth_type == "CB") %>% 
+  group_by(common_name) %>% 
+  summarise(avg_weight = mean(weight_g))
+
+n_cap_born <- dat %>% 
+  filter(age_category != "IJ",
+         birth_type == "CB") %>% 
+  select(common_name, dlc_id) %>% 
+  distinct() %>% 
+  group_by(common_name) %>% 
+  summarize(n_individuals = n())
+```
+
+
+## Weight difference wild-born and captivity-born lemurs
+
+* Nothing striking
+
+```{r}
+dat %>% 
+  filter(age_category != "IJ",
+         birth_type != "Unk",
+         common_name != "hybrid") %>% 
+  mutate(common_name = as.factor(common_name)) %>% 
+  group_by(common_name, dlc_id, birth_type) %>% 
+  summarise(avg_weight = mean(weight_g)) %>% 
+  ggplot(aes(x = avg_weight, y = reorder(common_name, avg_weight, FUN = mean), color = birth_type)) +
+  geom_jitter(alpha = 0.15, height = 0.15, width = 0) + 
+  stat_summary(fun = mean, shape = 73, size = 1) + 
+  labs(y = "", x = "Weight in grams", title = "Average weight of lemurs over the span of adulthood") +
+  theme_classic()
+```
+
+# Seasonal breeding in captive lemurs
+
+```{r}
+dat %>% 
+  filter(birth_type != "Unk",
+         common_name != "hybrid") %>% 
+  mutate(common_name = as.factor(common_name),
+         concep_month = lubridate::month(as.Date(estimated_concep))) %>% 
+  ggplot(aes(x = concep_month, y = reorder(common_name, concep_month, FUN = mean), group= common_name, color = concep_month)) +
+  geom_density_ridges_gradient() +
+  scale_y_date() +
+  theme_ridges()
+```
+
+
 
 ```{r}
 sessionInfo()
