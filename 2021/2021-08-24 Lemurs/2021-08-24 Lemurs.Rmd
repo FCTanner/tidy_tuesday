@@ -1,0 +1,56 @@
+---
+title: "2021-08-24 Lemurs"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+rm(list = ls())
+```
+
+```{r, message= FALSE, marning = FALSE, echo = FALSE}
+library(tidyverse)
+extrafont::loadfonts(device = "win", quiet = TRUE)
+
+`%nin%` <- Negate(`%in%`)
+```
+
+## Read data 
+
+* Took taxon names from data dictionary 
+* Assuming CMED means CMEAD
+
+```{r}
+lemurs <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-08-24/lemur_data.csv')
+lemurs$taxon[lemurs$taxon == "CMED"] <- "CMEAD"
+taxons <- readxl::read_xlsx("taxons.xlsx") %>% janitor::clean_names()
+```
+## Ideas 
+
+* Popularity of names of lemurs (names assigned at Duke Lemur Center)
+
+
+
+## EDA Lemurs
+
+```{r}
+skimr::skim(lemurs)
+```
+
+```{r}
+lemurs %>% 
+  left_join(taxons) %>% 
+  group_by(common_name, taxon) %>% 
+  count() %>% 
+  arrange(desc(n))
+
+
+```
+
+  
+
+```{r}
+sessionInfo()
+```
+
+
