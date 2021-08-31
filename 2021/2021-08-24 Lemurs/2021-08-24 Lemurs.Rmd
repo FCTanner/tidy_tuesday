@@ -4,6 +4,7 @@ output: github_document
 ---
 
 ```{r setup, include=FALSE}
+.libPaths("C:/Program Files/R/libs")
 knitr::opts_chunk$set(echo = TRUE)
 rm(list = ls())
 ```
