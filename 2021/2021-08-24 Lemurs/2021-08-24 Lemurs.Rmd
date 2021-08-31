@@ -4,7 +4,7 @@ output: github_document
 ---
 
 ```{r setup, include=FALSE}
-.libPaths("C:/Program Files/R/libs")
+.libPaths("C:/R-packages2/")
 knitr::opts_chunk$set(echo = TRUE)
 rm(list = ls())
 ```
@@ -74,12 +74,6 @@ length(unique(dat$dlc_id))
 
 ```{r}
 names <- dat %>% 
-  # filter(!is.na(name),
-  #        common_name %in% c("Gray mouse lemur",
-  #                       "Ring-tailed lemur",
-  #                       "Aye-aye"),
-  #        hybrid == "N",
-  #        sex == "M") %>% 
   select(dob, dlc_id, common_name, name) %>% 
   distinct() %>% 
   mutate(birth_year = lubridate::floor_date(dob, "years")) %>% 
@@ -102,6 +96,7 @@ dat %>%
   filter(name == 
            "MAURICE")
 ```
+
 ## Weight and lifespan
 
 ```{r}
@@ -130,7 +125,7 @@ dat %>%
 * Coquerel's sifaka = outlier?
 
 ```{r}
-dat %>% 
+p_weight <- dat %>% 
   filter(age_category != "IJ",
          common_name != "hybrid") %>% 
   mutate(common_name = as.factor(common_name)) %>% 
@@ -141,6 +136,8 @@ dat %>%
   stat_summary(fun = mean, color = "red", shape = 73, size = 1) + 
   labs(y = "", x = "Weight in grams", title = "Average weight of captive lemurs over the span of adulthood") +
   theme_classic()
+
+p_weight
 ```
 
 ```{r}
@@ -148,42 +145,7 @@ dat %>%
   filter(name == "SABINA")
 ```
 
-
 # Difference between wild-born and captivity -born? 
-## Summary stats wild-born and captivity-born
-
-```{r}
-avg_wild_born <- dat %>% 
-  filter(age_category != "IJ",
-         birth_type == "WB") %>% 
-  group_by(common_name) %>% 
-  summarise(avg_weight = mean(weight_g))
-
-n_wild_born <- dat %>% 
-  filter(age_category != "IJ",
-         birth_type == "WB") %>% 
-  select(common_name, dlc_id) %>% 
-  distinct() %>% 
-  group_by(common_name) %>% 
-  summarize(n_individuals = n())
-```
-
-```{r}
-avg_cap_born <- dat %>% 
-  filter(age_category != "IJ",
-         birth_type == "CB") %>% 
-  group_by(common_name) %>% 
-  summarise(avg_weight = mean(weight_g))
-
-n_cap_born <- dat %>% 
-  filter(age_category != "IJ",
-         birth_type == "CB") %>% 
-  select(common_name, dlc_id) %>% 
-  distinct() %>% 
-  group_by(common_name) %>% 
-  summarize(n_individuals = n())
-```
-
 
 ## Weight difference wild-born and captivity-born lemurs
 
@@ -207,7 +169,7 @@ dat %>%
 # Seasonal breeding in captive lemurs
 
 ```{r}
-dat %>% 
+p_breeding <- dat %>% 
   filter(birth_type != "Unk",
          common_name != "hybrid",
          !is.na(estimated_concep)) %>% 
@@ -225,9 +187,19 @@ dat %>%
   scale_fill_cyclical(values = c("grey", "red", "blue")) + 
   theme_ridges() +
   theme(axis.title.x = element_blank(),
-        axis.title.y = element_blank())
+        axis.title.y = element_blank(),
+        plot.caption = element_text(size = 6),
+        axis.text.x = element_text(size = 8)) + 
+  labs(title = "Seasonal breeding in captive lemurs", 
+       subtitle = "Most species breed mainly in winter",
+       caption = "Data: Zehr et al, 2014 - Nature | Visualization: @TannerFlorian")
+
+p_breeding
 ```
 
+```{r}
+ggsave(plot = p_breeding, filename = "Lemurs.png", units = "in", width = 3, height = 3, dpi = 300, scale = 2)
+```
 
 
 ```{r}
