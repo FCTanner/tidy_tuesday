@@ -126,7 +126,7 @@ p <- ggplot() +
   geom_smooth(data = filtered, aes(x = week_id, y = quant_value), color = "white") +
   # geom_point(data = filtered, aes(x = week_id, y = quant_value, color = length_group), alpha = 0.3) +
   facet_wrap(~quant_feature, scales = "free_y") +
-  scale_x_date(limits = c(as_date("1980-01-01"), as_date("2021-01-01"))) +
+  # scale_x_date(limits = c(as_date("1980-01-01"), as_date("2021-01-01"))) +
   theme_ft_rc() +
   theme(panel.grid.major.x = element_blank(),
         panel.grid.minor.x = element_blank(),
@@ -147,8 +147,9 @@ ggplotly(p)
 ```
 
 # To do
-* Add labels for a few songs
+* Add labels for a few songs / instead make interactive version, hover over dot to display title
 * Add definitions 
+
 
 ```{r}
 ggsave(plot = p_adelaide, filename = "Birds.png", units = "cm", width = 24, height = 14, dpi = 300)
