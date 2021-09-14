@@ -1,0 +1,163 @@
+---
+title: "2021-08-31 Bird Baths"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+.libPaths("C:/R-packages2/")
+knitr::opts_chunk$set(echo = TRUE)
+rm(list = ls())
+```
+
+```{r, message= FALSE, marning = FALSE, echo = FALSE}
+library(tidyverse)
+library(lubridate)
+library(hrbrthemes)
+library(ggtext)
+library(plotly)
+extrafont::loadfonts(device = "win", quiet = TRUE)
+`%nin%` <- Negate(`%in%`)
+```
+
+## Read data 
+
+```{r}
+billboard <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-14/billboard.csv')
+audio_features <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-14/audio_features.csv')
+```
+
+
+
+
+
+
+
+## Ideas 
+
+* Plot audio features over time, overlay points of songs, size and alpha as aes of popularity (time in charts / top 10 or something like that)
+  * weeks on chart should work, peak position is also helpful
+  * maybe just use those that reach top 1 at all
+  * How to make a top hit?
+  
+
+```{r}
+skimr::skim(billboard)
+skimr::skim(audio_features)
+```
+## Notes
+
+* does every track have audio features? 
+  * 86.7% do
+* maybe build model to check which audio features are best predictors (time should interact with this too though)
+
+## EDA
+
+```{r}
+billboard %>% 
+  left_join(audio_features) %>% 
+  skimr::skim()
+```
+
+```{r}
+joined <- billboard %>% 
+  left_join(audio_features) %>% 
+  filter(!is.na(loudness), # remove those without audio features
+         peak_position == 1) %>% 
+  mutate(spotify_track_duration_sec = round(spotify_track_duration_ms/1000)) %>% 
+  pivot_longer(cols = c(spotify_track_duration_sec, 
+                        danceability, 
+                        energy, 
+                        loudness, 
+                        speechiness, 
+                        acousticness, 
+                        instrumentalness, 
+                        liveness, 
+                        valence, 
+                        tempo, 
+                        time_signature, 
+                        spotify_track_popularity), 
+               names_to = "quant_feature", 
+               values_to = "quant_value") %>% 
+  # mutate(spotify_track_explicit = as.character(spotify_track_explicit),
+  #                                        key = as.character(key),
+  #                                        spotify_track_explicit = as.character(spotify_track_explicit),
+  #                                        mode = as.character(mode)) %>% 
+  # pivot_longer(cols = c(spotify_genre,
+  #                       spotify_track_explicit,
+  #                       key,
+  #                       mode),
+  #              names_to = "qual_feature", 
+  #              values_to = "qual_value") %>% 
+  mutate(week_id = lubridate::mdy(week_id)) %>% 
+  group_by(song_id) %>% 
+  slice_max(weeks_on_chart, n = 1) %>%  # selecting last instance on charts
+  mutate(length_group = case_when(weeks_on_chart >= 52 ~ "> 1 year",
+                                  weeks_on_chart < 52 & weeks_on_chart >= 26 ~ "> 6 months",
+                                  weeks_on_chart < 26 & weeks_on_chart >= 12 ~ "> 3 months"))
+  
+```
+```{r}
+joined %>% 
+  ggplot(aes(x = week_id, y = quant_value)) +
+  geom_point(alpha = 0.1) +
+  facet_wrap(~quant_feature, scales = "free_y")
+```
+
+```{r}
+filtered <- joined %>% 
+  filter(quant_feature %nin% c("time_signature", "instrumentalness", "spotify_track_popularity"),
+                               weeks_on_chart > 12) %>% 
+  mutate(quant_feature = str_to_title(quant_feature))
+
+filtered$quant_feature[filtered$quant_feature == "Loudness"] <- "Loudness [db]"
+filtered$quant_feature[filtered$quant_feature == "Spotify_track_duration_sec"] <- "Duration [sec]"
+filtered$quant_feature[filtered$quant_feature == "Tempo"] <- "Tempo [BPM]"
+filtered$quant_feature[filtered$quant_feature == "Valence"] <- "Valence (Musical positiveness)"
+```
+
+```{r, fig.height = 7}
+plot_subtitle <- "Spotify audio features of #1 hits on the Billboard Hot 100, which is the music industry standard record chart in the United States for songs. Chart rankings are based on sales (physical and digital), radio play, and online streaming in the United States. #1 hits that remained in the Hot 100 for <span style = 'color: #EF476F;'>more than a year</span>, <span style = 'color: #FFD166;'>more than six months</span>, <span style = 'color: #118AB2;'>more than three months</span>."
+
+p <- ggplot() +
+  geom_point(data = filtered %>% filter(length_group == "> 3 months"), aes(x = week_id, y = quant_value), color = "#118AB2", alpha = 0.2) +
+  geom_point(data = filtered %>% filter(length_group == "> 6 months"), aes(x = week_id, y = quant_value), color = "#FFD166", alpha = 0.4) +
+  geom_point(data = filtered %>% filter(length_group == "> 1 year"), aes(x = week_id, y = quant_value), color = "#EF476F", alpha = 0.8) +
+  geom_smooth(data = filtered, aes(x = week_id, y = quant_value), color = "black", size = 1.2, se = FALSE) +
+  geom_smooth(data = filtered, aes(x = week_id, y = quant_value), color = "white") +
+  # geom_point(data = filtered, aes(x = week_id, y = quant_value, color = length_group), alpha = 0.3) +
+  facet_wrap(~quant_feature, scales = "free_y") +
+  scale_x_date(limits = c(as_date("1980-01-01"), as_date("2021-01-01"))) +
+  theme_ft_rc() +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        # plot.subtitle = element_markdown(),
+        plot.subtitle= element_textbox_simple(size = 13,lineheight = 1,
+      padding = margin(5.5, 5.5, 5.5, 5.5),
+      margin = margin(0, 0, 5.5, 0))) +
+  labs(title = "Making a hit song",
+       subtitle = plot_subtitle)
+
+p
+```
+
+```{r, fig.height = 7}
+ggplotly(p)
+```
+
+# To do
+* Add labels for a few songs
+* Add definitions 
+
+```{r}
+ggsave(plot = p_adelaide, filename = "Birds.png", units = "cm", width = 24, height = 14, dpi = 300)
+
+```
+
+
+```{r}
+sessionInfo()
+```
+
+
