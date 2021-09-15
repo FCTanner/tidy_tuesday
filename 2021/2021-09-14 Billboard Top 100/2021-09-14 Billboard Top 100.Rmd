@@ -1,5 +1,5 @@
 ---
-title: "2021-08-31 Bird Baths"
+title: "2021-09-14 Billboard Top 100"
 output: github_document
 ---
 
@@ -14,8 +14,11 @@ library(tidyverse)
 library(lubridate)
 library(hrbrthemes)
 library(ggtext)
-library(plotly)
-extrafont::loadfonts(device = "win", quiet = TRUE)
+library(ggrepel)
+library(showtext)
+font_add_google("Roboto Condensed")
+showtext_auto
+showtext_opts(dpi = 300)
 `%nin%` <- Negate(`%in%`)
 ```
 
@@ -78,16 +81,6 @@ joined <- billboard %>%
                         spotify_track_popularity), 
                names_to = "quant_feature", 
                values_to = "quant_value") %>% 
-  # mutate(spotify_track_explicit = as.character(spotify_track_explicit),
-  #                                        key = as.character(key),
-  #                                        spotify_track_explicit = as.character(spotify_track_explicit),
-  #                                        mode = as.character(mode)) %>% 
-  # pivot_longer(cols = c(spotify_genre,
-  #                       spotify_track_explicit,
-  #                       key,
-  #                       mode),
-  #              names_to = "qual_feature", 
-  #              values_to = "qual_value") %>% 
   mutate(week_id = lubridate::mdy(week_id)) %>% 
   group_by(song_id) %>% 
   slice_max(weeks_on_chart, n = 1) %>%  # selecting last instance on charts
@@ -115,45 +108,78 @@ filtered$quant_feature[filtered$quant_feature == "Tempo"] <- "Tempo [BPM]"
 filtered$quant_feature[filtered$quant_feature == "Valence"] <- "Valence (Musical positiveness)"
 ```
 
-```{r, fig.height = 7}
-plot_subtitle <- "Spotify audio features of #1 hits on the Billboard Hot 100, which is the music industry standard record chart in the United States for songs. Chart rankings are based on sales (physical and digital), radio play, and online streaming in the United States. #1 hits that remained in the Hot 100 for <span style = 'color: #EF476F;'>more than a year</span>, <span style = 'color: #FFD166;'>more than six months</span>, <span style = 'color: #118AB2;'>more than three months</span>."
+```{r}
+plot_subtitle <- "Spotify audio features of #1 hits on the Billboard Hot 100, which is the music industry standard record chart in the United States for songs. Chart rankings are based on sales (physical and digital), radio play, and online streaming in the United States. The graphic shows all #1 hits that remained in the Hot 100 for <span style = 'color: #118AB2;'>more than three months,</span> <span style = 'color: #FFD166;'>more than six months,</span> or <span style = 'color: #EF476F;'>more than a year.</span> "
+```
 
+### Which ones to label 
+
+```{r}
+labels_min <- filtered %>%
+  filter(length_group == "> 1 year") %>%
+  select(performer, song, week_id, quant_feature, quant_value) %>%
+  group_by(quant_feature) %>%
+  slice_min(n = 1, quant_value) %>%
+  mutate(label = str_c(performer, " -", "\n", song),
+         label = str_replace(label, " Featuring ", ", ")) %>%
+  dplyr::distinct()
+
+labels_max <- filtered %>%
+  filter(length_group == "> 1 year") %>%
+  select(performer, song, week_id, quant_feature, quant_value) %>%
+  group_by(quant_feature) %>%
+  slice_max(n = 1, quant_value)%>%
+  mutate(label = str_c(performer, "\n", song),
+         label = str_replace(label, " Featuring ", ", "))%>%
+  dplyr::distinct()
+
+
+labelled <- filtered %>%  
+  left_join(labels_max %>%bind_rows(labels_min)) %>% 
+  dplyr::distinct()
+```
+
+
+
+```{r, fig.height = 7}
 p <- ggplot() +
-  geom_point(data = filtered %>% filter(length_group == "> 3 months"), aes(x = week_id, y = quant_value), color = "#118AB2", alpha = 0.2) +
-  geom_point(data = filtered %>% filter(length_group == "> 6 months"), aes(x = week_id, y = quant_value), color = "#FFD166", alpha = 0.4) +
-  geom_point(data = filtered %>% filter(length_group == "> 1 year"), aes(x = week_id, y = quant_value), color = "#EF476F", alpha = 0.8) +
-  geom_smooth(data = filtered, aes(x = week_id, y = quant_value), color = "black", size = 1.2, se = FALSE) +
-  geom_smooth(data = filtered, aes(x = week_id, y = quant_value), color = "white") +
-  # geom_point(data = filtered, aes(x = week_id, y = quant_value, color = length_group), alpha = 0.3) +
+  geom_point(data = labelled %>% filter(length_group == "> 3 months"), 
+             aes(x = week_id, y = quant_value), color = "#118AB2", alpha = 0.3) +
+  geom_point(data = labelled %>% filter(length_group == "> 6 months"), 
+             aes(x = week_id, y = quant_value), color = "#FFD166", alpha = 0.4) +
+  geom_point(data = labelled %>% filter(length_group == "> 1 year"), 
+             aes(x = week_id, y = quant_value), color = "#EF476F", alpha = 0.8) +
+    geom_point(data = labelled %>% filter(length_group == "> 1 year",
+                                        !is.na(label)), 
+             aes(x = week_id, y = quant_value), color = "white", alpha = 0.9, size =3) +
+  geom_point(data = labelled %>% filter(length_group == "> 1 year",
+                                        !is.na(label)), 
+             aes(x = week_id, y = quant_value), color = "#EF476F", alpha = 0.9, size =2.5) +
+  geom_smooth(data = labelled, aes(x = week_id, y = quant_value), color = "black", size = 1.2, se = FALSE) +
+  geom_smooth(data = labelled, aes(x = week_id, y = quant_value), color = "#e6e6f1") +
+  geom_text_repel(data = labelled, aes(x = week_id, y = quant_value, label = label),
+                  min.segment.length = 0, seed = 42, box.padding = 0.5, 
+                  color = "#e6e6f1",bg.color = "black", bg.r = 0.1,
+                  size = 3.3) +
   facet_wrap(~quant_feature, scales = "free_y") +
-  # scale_x_date(limits = c(as_date("1980-01-01"), as_date("2021-01-01"))) +
   theme_ft_rc() +
   theme(panel.grid.major.x = element_blank(),
         panel.grid.minor.x = element_blank(),
         axis.title.x = element_blank(),
         axis.title.y = element_blank(),
-        # plot.subtitle = element_markdown(),
-        plot.subtitle= element_textbox_simple(size = 13,lineheight = 1,
-      padding = margin(5.5, 5.5, 5.5, 5.5),
-      margin = margin(0, 0, 5.5, 0))) +
-  labs(title = "Making a hit song",
-       subtitle = plot_subtitle)
-
-p
+        plot.subtitle= element_textbox_simple(size = 13,lineheight = 1.3,
+                                              padding = margin(5.5, 5.5, 5.5, 5.5),
+                                              margin = margin(0, 0, 5.5, 0),
+                                              maxheight = NULL),
+        plot.title = element_text(size = 30)) +
+  labs(title = "How to Write a Hit Song",
+       subtitle = plot_subtitle,
+       caption = "\n\nData: Data.World by way of Sean Miller, Billboard.com and Spotify | Graphic: @TannerFlorian")
 ```
-
-```{r, fig.height = 7}
-ggplotly(p)
-```
-
-# To do
-* Add labels for a few songs / instead make interactive version, hover over dot to display title
-* Add definitions 
-
+  
 
 ```{r}
-ggsave(plot = p_adelaide, filename = "Birds.png", units = "cm", width = 24, height = 14, dpi = 300)
-
+ggsave(plot = p, filename = "Billboard100.png", units = "cm", width = 24, height = 14, dpi = 300, scale = 1.4, type = "cairo")
 ```
 
 
