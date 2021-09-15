@@ -2,6 +2,13 @@
 
 This repo contains selected [TidyTuesday](https://github.com/rfordatascience/tidytuesday) analyses. Folders include original scripts and Rmarkdown documents. See below for some graphs from the individual analyses. 
 
+---
+
+## 2021-09-14 Billboard Top 100
+
+[Code](https://github.com/FCTanner/tidy_tuesday/blob/main/2021/2021-09-14%20Billboard%20Top%20100/2021-09-14-Billboard-Top-100.md)
+
+![alt text](https://github.com/FCTanner/tidy_tuesday/blob/main/2021/2021-09-14%20Billboard%20Top%20100/Billboard100.png)
 
 ---
 
