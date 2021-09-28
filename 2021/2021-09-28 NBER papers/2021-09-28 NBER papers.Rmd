@@ -1,0 +1,105 @@
+---
+title: "2021-09-28 NBER Papers"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+.libPaths("C:/R-packages2/")
+knitr::opts_chunk$set(echo = TRUE)
+rm(list = ls())
+```
+
+```{r, message= FALSE, marning = FALSE, echo = FALSE}
+library(tidyverse)
+library(lubridate)
+library(hrbrthemes)
+library(ggtext)
+library(ggrepel)
+library(showtext)
+font_add_google("Roboto Condensed")
+showtext_auto
+showtext_opts(dpi = 300)
+`%nin%` <- Negate(`%in%`)
+```
+
+## Read data 
+
+```{r}
+papers <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-28/papers.csv')
+authors <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-28/authors.csv')
+programs <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-28/programs.csv')
+paper_authors <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-28/paper_authors.csv')
+paper_programs <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-28/paper_programs.csv')
+```
+### Join script from tidytuesday repo
+
+```{r}
+joined_df <- left_join(papers, paper_authors) %>% 
+  left_join(authors) %>% 
+  left_join(paper_programs) %>% 
+  left_join(programs)%>% 
+  mutate(
+    catalogue_group = str_sub(paper, 1, 1),
+    catalogue_group = case_when(
+      catalogue_group == "h" ~ "Historical",
+      catalogue_group == "t" ~ "Technical",
+      catalogue_group == "w" ~ "General"
+    ),
+    .after = paper
+  ) 
+```
+
+
+## EDA
+
+```{r}
+skimr::skim(joined_df)
+
+joined_df %>% count(catalogue_group)
+joined_df %>% count(program)
+joined_df %>% count(program_desc)
+joined_df %>% count(program_category)
+
+```
+
+
+```{r}
+joined_df %>% group_by(program_desc) %>% count(name) %>% rename(count = n) %>% slice_max(count, n = 5)
+
+joined_df %>% count(name) %>% rename(count = n) %>% slice_max(count, n = 5)
+```
+
+
+## Ideas 
+
+Publish or perish
+* ECR = 5 years post PhD
+* MCR = 5 - 10 (15?) years post PhD
+* EMCR =  <10 years post PhD
+* Rest of career=   >10 years post PhD
+
+## Notes
+
+* How to: 
+  * find first published paper
+  * Count papers within first 5 / 10 years
+  * Count remaining papers 
+  
+
+```{r, fig.height = 8}
+joined_df %>% 
+  group_by(name) %>% 
+  mutate(first_paper = min(year),
+         emcr_paper = case_when(year - first_paper <=10 ~ TRUE,
+                                year - first_paper > 10 ~ FALSE)) %>% 
+  count(emcr_paper , .drop = FALSE) %>% 
+  ggplot(aes(x = emcr_paper, y = n, group = name)) +
+  geom_line(alpha = 0.2)
+```
+
+
+```{r}
+sessionInfo()
+```
+
+
