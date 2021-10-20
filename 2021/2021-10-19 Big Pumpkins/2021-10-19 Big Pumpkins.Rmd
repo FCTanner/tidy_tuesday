@@ -1,0 +1,167 @@
+---
+title: "2021-10-19 Big Pumpkins"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+.libPaths("C:/R-packages2/")
+knitr::opts_chunk$set(echo = TRUE)
+rm(list = ls())
+```
+
+```{r, message= FALSE, marning = FALSE, echo = FALSE}
+library(tidyverse)
+library(ggstatsplot)
+library(showtext)
+`%nin%` <- Negate(`%in%`)
+```
+
+## Read data 
+
+```{r}
+pumpkins <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-10-19/pumpkins.csv')
+```
+
+
+## EDA 
+
+Add year and crop
+
+```{r}
+pumpkins_clean <- pumpkins %>% 
+  mutate(comp_year = substr(id,  1, 4),
+         crop = case_when(str_detect(id, "F") ~ "Field Pumpkin",
+                          str_detect(id, "P") ~ "Giant Pumpkin",
+                          str_detect(id, "S") ~ "Giant Squash",
+                          str_detect(id, "W") ~ "Giant Watermelon",
+                          str_detect(id, "L") ~ "Long Gourd",
+                          str_detect(id, "T") ~ "Tomato"),
+         weight_lbs_num = as.numeric(str_remove(weight_lbs, ",")),
+         weight_kg = weight_lbs_num * 0.453592) %>% 
+  filter(!is.na(weight_lbs_num)) # Removing multiple entries
+
+skimr::skim(pumpkins_clean)
+```
+
+### How many of each crop?
+
+```{r}
+pumpkins_clean %>% 
+  filter(!is.na(pollinator_father)) %>% 
+  count(crop)
+```
+
+## Ideas 
+
+* Heterosis?
+* Which ones have known pollinators?
+
+
+### Group forms of pollination
+
+```{r}
+unknown_pollination <- pumpkins_clean %>% 
+  filter(is.na(seed_mother) | 
+           is.na(pollinator_father) |
+           str_detect(seed_mother, "\\?") |
+           str_detect(pollinator_father, "\\?") |
+           pollinator_father %in% c("unknown", "Unknown", "mystery", "Mystery") |
+           seed_mother %in% c("unknown", "Unknown", "mystery", "Mystery"))
+
+selfed_plants <- pumpkins_clean %>% 
+  anti_join(unknown_pollination) %>% 
+  filter(pollinator_father %in% c("Sibbed", "sibbed", "self", "Self", "selfed", "Selfed", "sib", "sibb", "Sib") | 
+           pollinator_father == seed_mother) %>% 
+  mutate(pollination = "Self-pollination")
+
+open_pollinated <-pumpkins_clean %>%
+  anti_join(unknown_pollination) %>% 
+  anti_join(selfed_plants) %>% 
+  filter(pollinator_father %in% c("open", "Open")) %>% 
+  mutate(pollination = "Open pollination")
+
+
+cross_pollinated <- pumpkins_clean %>% 
+  anti_join(selfed_plants) %>% 
+  anti_join(open_pollinated) %>% 
+  anti_join(unknown_pollination)%>% 
+  mutate(pollination = "Cross-pollination")
+```
+### Combining the entries with evident form of pollination
+
+```{r}
+pumpkins_known_pollination <- rbind(selfed_plants, open_pollinated, cross_pollinated)
+```
+
+
+
+```{r}
+pumpkins_known_pollination %>% 
+  ggplot(aes(x = pollination, y = weight_kg, color = pollination, shape = pollination)) +
+  geom_jitter(alpha = 0.3) +
+  facet_wrap(~crop, scales= "free_y")
+```
+
+```{r, fig.height=8}
+set.seed(123)
+p_all <- grouped_ggbetweenstats(
+  data = pumpkins_known_pollination,
+  x = pollination,
+  y = weight_kg,
+  grouping.var = crop,
+  type = "parametric",
+  xlab= "Pollination", 
+  ylab = "Weight in kg",
+  p.adjust.method = "none",
+  pairwise.display = "significant",
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.6), alpha
+    = 0.15, size = 1.5, stroke = 0),
+  annotation.args = list(
+    title = "Don't leave it to the bees",
+    subtitle = "Comparison of pollinations of vegetables and fruits entered into 'Great Pumpkin Commonwealth’s' competitions. The aim is to grow the largest crop.",
+    caption = "Data: BigPumpkins.com | Graphic: @TannerFlorian"
+  )
+)
+p_all
+```
+
+```{r}
+ggsave(plot = p_all, filename = "big_pumpkins_all.png", device = "png", units = "cm", width = 28, height= 28, limitsize = F)
+```
+
+
+
+
+```{r, fig.height=6}
+set.seed(123)
+p_giant_pumpkin <- ggbetweenstats(
+  data = pumpkins_known_pollination %>% filter(crop == "Giant Pumpkin"),
+  x = pollination,
+  y = weight_kg,
+  type = "parametric",
+  xlab= "Type of pollination", 
+  ylab = "Weight in kg",
+  p.adjust.method = "none",
+  pairwise.display = "significant",
+  point.args = list(position = ggplot2::position_jitterdodge(dodge.width = 0.7), alpha
+    = 0.15, size = 1, stroke = 0),
+  results.subtitle = FALSE,
+  title = "Don't leave it to the bees",
+  subtitle = str_wrap("Types of pollinations of giant pumpkins entered into 'Great Pumpkin Commonwealth’s' competitions: the aim is to grow the largest pumpkin.\n", 80),
+  ggstatsplot.layer = FALSE,
+  ggplot.component = list(theme(plot.title = element_text(size = 18),
+                                plot.subtitle = element_text(size = 8),
+                                plot.caption = element_text(size = 7))))
+p_giant_pumpkin
+```
+
+```{r}
+ggsave(plot = p_giant_pumpkin, filename = "big_giant_pumpkins.png", device = "png", units = "cm", width = 14, height= 14, limitsize = F)
+```
+
+
+```{r}
+sessionInfo()
+```
+
+
