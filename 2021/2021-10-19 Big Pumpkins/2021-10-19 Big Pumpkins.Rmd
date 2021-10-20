@@ -93,12 +93,23 @@ cross_pollinated <- pumpkins_clean %>%
 pumpkins_known_pollination <- rbind(selfed_plants, open_pollinated, cross_pollinated)
 ```
 
-
+### Weights per pollination
 
 ```{r}
 pumpkins_known_pollination %>% 
   ggplot(aes(x = pollination, y = weight_kg, color = pollination, shape = pollination)) +
   geom_jitter(alpha = 0.3) +
+  facet_wrap(~crop, scales= "free_y")
+```
+
+### Trends in pollination over time?
+
+```{r}
+pumpkins_known_pollination %>% 
+  group_by(comp_year, crop, pollination) %>% 
+  summarise(entries = n()) %>% 
+  ggplot(aes(x = comp_year, y = entries, color = pollination, linetype = pollination, group = pollination)) +
+  geom_line() +
   facet_wrap(~crop, scales= "free_y")
 ```
 
