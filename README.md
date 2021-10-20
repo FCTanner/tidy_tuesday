@@ -4,6 +4,14 @@ This repo contains selected [TidyTuesday](https://github.com/rfordatascience/tid
 
 ---
 
+## 2021-10-19 Big Pumpkins
+
+[Code](https://github.com/FCTanner/tidy_tuesday/blob/main/2021/2021-10-19%20Big%20Pumpkins/2021-10-19-Big-Pumpkins.md)
+
+![alt text](https://github.com/FCTanner/tidy_tuesday/blob/main/2021/2021-10-19%20Big%20Pumpkins/big_giant_pumpkins_manual.png)
+
+---
+
 ## 2021-09-14 Billboard Top 100
 
 [Code](https://github.com/FCTanner/tidy_tuesday/blob/main/2021/2021-09-14%20Billboard%20Top%20100/2021-09-14-Billboard-Top-100.md)
