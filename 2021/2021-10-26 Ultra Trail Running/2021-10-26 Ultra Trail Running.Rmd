@@ -1,0 +1,83 @@
+---
+title: "2021-10-26 Ultra Trail Running"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+.libPaths("C:/R-packages2/")
+knitr::opts_chunk$set(echo = TRUE)
+rm(list = ls())
+```
+
+```{r, message= FALSE, marning = FALSE, echo = FALSE}
+library(tidyverse)
+library(lubridate)
+`%nin%` <- Negate(`%in%`)
+```
+
+## Read data 
+
+```{r}
+ultra_rankings <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-10-26/ultra_rankings.csv')
+race <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-10-26/race.csv')
+
+```
+## Ideas 
+
+*	Rank races by difficulty
+*	Average finishing times
+*	Lengths, vert
+*	Competitiveness
+*	Map of events with initial year?
+  * Not really enough data + COVID effect 
+*	How much slower is average than the winners?
+*	Big wins, course records? (% faster than second place)
+*	Cut-offs? 
+
+## EDA
+
+
+```{r}
+event_creation <- race %>% 
+  filter(participants > 0) %>% 
+  group_by(race, event) %>% 
+  summarise(first_date = min(date)) %>% 
+  mutate(first_year = floor_date(first_date, unit = "year")) %>% 
+  ungroup()
+```
+```{r}
+event_creation %>% 
+  count(first_year)
+```
+* Long-standing events
+
+```{r}
+race %>% 
+  filter(participants > 0,
+         distance  > 0) %>% 
+  group_by(event, race) %>% 
+  count() %>% 
+  arrange(desc(n))
+```
+
+```{r}
+hist(race$distance)
+```
+
+### Pace of 100-mile events
+
+```{r}
+race %>% 
+  filter(distance > 155,
+         distance < 170,
+         participants > 0) %>% 
+  right_join(ultra_rankings) %>% 
+  group_by(race, event, date)
+```
+
+
+```{r}
+sessionInfo()
+```
+
+
