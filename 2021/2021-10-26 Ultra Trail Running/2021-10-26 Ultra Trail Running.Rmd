@@ -204,8 +204,8 @@ ggplot() +
   geom_point(data = races_2018_labelled , aes(x = elevation_gain, y = avg_pace_km), size =3, shape = 21, fill = b_highlight_color) +
   scale_y_reverse(sec.axis = sec_axis( trans=~.*1.60934, name="Minutes per mile")) +
   labs(title = "\"Very runnable\", they said",
-       subtitle = "Average pace of finishers of 100 mile trail races in 2018") +
-  # ggrepel::geom_text_repel(data = races_2018_labelled, aes(x = elevation_gain, y = avg_pace_km, label = event), color = "#929299", direction = "y", min.segment.length = 0, hjust= 0) +
+       subtitle = "Average pace of finishers and winning pace of 100 mile trail races in 2018") +
+  ggrepel::geom_text_repel(data = races_2018_labelled, aes(x = elevation_gain, y = avg_pace_km, label = event),  direction = "y", min.segment.length = 0, hjust= 0) +
   geom_point(data = races_2018_labelled, aes(x = elevation_gain, y = fastest_pace_km), shape = 21, fill = a_highlight_color, size= 3) +
   theme_ultra
 ```
