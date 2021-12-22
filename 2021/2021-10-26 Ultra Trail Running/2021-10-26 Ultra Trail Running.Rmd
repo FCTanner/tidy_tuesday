@@ -14,7 +14,9 @@ library(tidyverse)
 library(lubridate)
 library(showtext)
 library(ggtext)
-# sysfonts::font_add_google("Roboto Condensed")
+sysfonts::font_add_google("Roboto")
+showtext_auto()
+showtext_opts(dpi = 300)
 `%nin%` <- Negate(`%in%`)
 ```
 
@@ -33,7 +35,7 @@ race <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidyt
 *	Lengths, vert
 *	Competitiveness
 *	Map of events with initial year?
-  * Not really enough data + COVID effect 
+* Not really enough data + COVID effect 
 *	How much slower is average than the winners?
 *	Big wins, course records? (% faster than second place)
 *	Cut-offs? 
@@ -142,44 +144,6 @@ races_2018_labelled <- races_2018 |>
 ```
 
 
-
-
-
-```{r, fig.height = 6}
-ggplot() +
-  geom_point(data = races_2018 , aes(x = elevation_gain, y = avg_pace_km)) +
-  geom_point(data = races_2018_labelled , aes(x = elevation_gain, y = avg_pace_km), color = "red", size = 3) +
-  scale_y_reverse(sec.axis = sec_axis( trans=~.*1.60934, name="Minutes per mile")) +
-  labs(title = "\"Very runnable\"",
-       subtitle = "Average pace of finishers of 100 mile trail races in 2018") +
-  ggrepel::geom_text_repel(data = races_2018_labelled, aes(x = elevation_gain, y = avg_pace_km, label = event), color = "#929299", direction = "y", min.segment.length = 0, hjust= 0) +
-  hrbrthemes::theme_ft_rc()
-  # geom_point(aes(x = elevation_gain, y = fastest_pace), shape = 1, alpha = 0.3) +
-  # geom_segment(aes(x = elevation_gain, xend = elevation_gain, y = fastest_pace, yend= avg_pace))
-  
-```
-
-## Todo
-
-* Add winning pace
-* Right align geom_text_repel labels
-* Maybe change theme
-
-
-
-```{r}
-ggplot() +
-  geom_point(data = races_2018 , aes(x = elevation_gain, y = avg_pace_km)) +
-  geom_point(data = races_2018_labelled , aes(x = elevation_gain, y = avg_pace_km), color = "red", size = 3) +
-  scale_y_reverse(sec.axis = sec_axis( trans=~.*1.60934, name="Minutes per mile")) +
-  labs(title = "\"Very runnable\", they said",
-       subtitle = "Average pace of finishers of 100 mile trail races in 2018") +
-  # ggrepel::geom_text_repel(data = races_2018_labelled, aes(x = elevation_gain, y = avg_pace_km, label = event), color = "#929299", direction = "y", min.segment.length = 0, hjust= 0) +
-  geom_point(data = races_2018, aes(x = elevation_gain, y = fastest_pace_km)) +
-  geom_segment(data = races_2018, aes(x = elevation_gain, xend = elevation_gain, y = fastest_pace_km, yend= avg_pace_km)) +
-  theme_bw()
-```
-
 ```{r}
 bg_color <- "#FEFAE0"
 a_highlight_color <- "#BC6C25"
@@ -190,76 +154,48 @@ b_light_color <- "#606C38"
 theme_ultra <- theme_bw() +
   theme(plot.background = element_rect(fill = bg_color, color = NA),
         panel.background = element_rect(fill = bg_color, color = NA),
-        text = element_text(family = "Roboto Condensed"))
-  
+        text =element_text(family = "Roboto"),
+        plot.subtitle= element_textbox_simple(size = 10,lineheight = 1.3,
+                                              padding = margin(5.5, 5.5, 5.5, 5.5),
+                                              margin = margin(0, 0, 5.5, 0),
+                                              maxheight = NULL),
+        plot.title = element_text(size = 18),
+        axis.title = element_text(size = 8.5),
+        plot.caption = element_text(size = 6)) 
+
+trail_subtitle = "Average pace of <span style = 'color: #283618;'>**finishers**</span> and <span style = 'color: #BC6C25;'>**winners**</span> of 100 mile trail races in 2018"
+
 ```
 
 
-```{r, fig.height = 6}
-ggplot() +
+```{r, fig.height = 5}
+p <- ggplot() +
   geom_segment(data = races_2018_labelled, aes(x = elevation_gain, xend = elevation_gain, y = fastest_pace_km, yend= avg_pace_km), alpha = 0.5) +
   geom_segment(data = races_2018, aes(x = elevation_gain, xend = elevation_gain, y = fastest_pace_km, yend= avg_pace_km), alpha = 0.2) +
-  geom_point(data = races_2018 , aes(x = elevation_gain, y = avg_pace_km), shape= 21, fill = b_light_color) +
-  geom_point(data = races_2018 , aes(x = elevation_gain, y = fastest_pace_km), shape= 21, fill = a_light_color) +
-  geom_point(data = races_2018_labelled , aes(x = elevation_gain, y = avg_pace_km), size =3, shape = 21, fill = b_highlight_color) +
+  geom_point(data = races_2018 , aes(x = elevation_gain, y = avg_pace_km),  
+             color = b_light_color) +
+  geom_point(data = races_2018 , aes(x = elevation_gain, y = fastest_pace_km), 
+             color = a_light_color) +
+  geom_point(data = races_2018_labelled , aes(x = elevation_gain, y = avg_pace_km), 
+             size =3, color = b_highlight_color) +
   scale_y_reverse(sec.axis = sec_axis( trans=~.*1.60934, name="Minutes per mile")) +
   labs(title = "\"Very runnable\", they said",
-       subtitle = "Average pace of finishers and winning pace of 100 mile trail races in 2018") +
-  ggrepel::geom_text_repel(data = races_2018_labelled, aes(x = elevation_gain, y = avg_pace_km, label = event),  direction = "y", min.segment.length = 0, hjust= 0) +
-  geom_point(data = races_2018_labelled, aes(x = elevation_gain, y = fastest_pace_km), shape = 21, fill = a_highlight_color, size= 3) +
+       subtitle = trail_subtitle,
+       x = "Elevation gain [m]", y = "Minutes per km",
+       caption = "Data: ITRA | Graphic: @TannerFlorian") +
+  geom_point(data = races_2018_labelled, aes(x = elevation_gain, y = fastest_pace_km),  color = a_highlight_color, size= 3) +
+  ggrepel::geom_label_repel(data = races_2018_labelled, aes(x = elevation_gain, y = fastest_pace_km, label = event),  direction = "y", min.segment.length = 0, hjust= 0, force =5, fill = bg_color, seed = 123, family = "Roboto",
+                            size = 2, box.padding = 0, label.padding = 0.15) +
+  annotate("segment", x = 1000, xend = 1000, y = 20, yend = 15,
+           arrow = arrow(length = unit(2, "mm"))) +
+  annotate("text", x = 1600, y = 17.5, label = "Faster", family = "Roboto", size = 3, color = "black") +
   theme_ultra
 ```
 
 
-# DNF - rate
-
-Cannot be calculated, seems not all races listed rank = NA for DNF
-
-
 ```{r}
-n_dnf <- ultra_rankings %>% 
-  left_join(race) %>% 
-  filter(is.na(rank)) %>% 
-  group_by(race_year_id) %>% 
-  summarise(n_dnf = n())
+ggsave(plot = p, filename = "ultras.png", units = "cm", device = "png", width = 12, height = 8, dpi = 300, scale = 1.2, type = "cairo")
 ```
-
-
-```{r}
-race %>% 
-  left_join(n_dnf)
-```
-
-
-```{r}
-races_2018 <- ultra_rankings |>
-  left_join(race) |>
-  filter(distance > 155, 
-         distance < 170,
-         date > as.Date("2017-12-31"),
-         date < as.Date("2018-12-31")) |>
-  mutate(miles = distance / 1.60934,
-         pace_km = (time_in_seconds/60)/distance,
-         pace_mile = (time_in_seconds/60)/miles) |>
-  group_by(race_year_id) |>
-  mutate(avg_pace_mile = mean(pace_mile, na.rm = TRUE),
-            avg_pace_km = mean(pace_km, na.rm = TRUE),
-            race_year_id = race_year_id,
-            fastest_pace_km = min(avg_pace_km),
-            participants_from_rankings = n()) |>
-  left_join(race) |>
-  distinct() |>
-  filter(participants_from_rankings > 50) 
-  
-
-
-```
-
-
-
-
-
-
 
 
 ```{r}
