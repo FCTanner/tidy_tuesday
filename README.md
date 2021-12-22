@@ -4,6 +4,14 @@ This repo contains selected [TidyTuesday](https://github.com/rfordatascience/tid
 
 ---
 
+## 2021-10-26 Ultra Trail Running
+
+[Code](https://github.com/FCTanner/tidy_tuesday/blob/main/2021/2021-10-26%20Ultra%20Trail%20Running/2021-10-26-Ultra-Trail-Running.md)
+
+![alt text](https://github.com/FCTanner/tidy_tuesday/blob/main/2021/2021-10-26%20Ultra%20Trail%20Running/ultras.png)
+
+---
+
 ## 2021-10-19 Big Pumpkins
 
 [Code](https://github.com/FCTanner/tidy_tuesday/blob/main/2021/2021-10-19%20Big%20Pumpkins/2021-10-19-Big-Pumpkins.md)
