@@ -1,0 +1,130 @@
+---
+title: "2022-01-25 Board games"
+output: github_document
+---
+
+
+```{r setup, include=FALSE}
+.libPaths("C:/R-packages2/")
+knitr::opts_chunk$set(echo = TRUE)
+rm(list = ls())
+```
+
+```{r, message= FALSE, marning = FALSE, echo = FALSE}
+library(tidyverse)
+library(tidymodels)
+library(gt)
+# library(lubridate)
+# library(showtext)
+# library(ggtext)
+# sysfonts::font_add_google("Roboto")
+# showtext_auto()
+# showtext_opts(dpi = 300)
+`%nin%` <- Negate(`%in%`)
+```
+
+## Read data 
+
+```{r}
+ratings <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-01-25/ratings.csv')
+details <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-01-25/details.csv')
+
+```
+
+## Questions
+
+* Is rating influenced by play lengths
+* How long do categories of games take? 
+* Best designers, best artists?
+
+## Notes
+
+* Character columns are Python lists
+* Link to thumbnail is included! Could be used for highlighting
+* Maxplaytime and playtime are equal
+* reviews users posted on boardgamegeek
+
+## Playing time 
+
+```{r}
+joined <- details |> 
+  left_join(ratings, by = "id") 
+
+joined |> 
+  skimr::skim()
+```
+
+
+```{r}
+mean(joined$playingtime == joined$maxplaytime)
+
+
+joined |> 
+  mutate(avg_time = (playingtime + minplaytime)/2) |> 
+  filter(avg_time < 600) |> 
+  ggplot(aes(x = avg_time, y = average, size = users_rated)) +
+  geom_point(alpha = 0.2)
+
+```
+```{r}
+long_games <- joined |> 
+  mutate(avg_time = (playingtime + minplaytime)/2) |> 
+  filter(avg_time > 600)
+```
+
+
+```{r}
+joined |> 
+  filter(playingtime < 10)
+```
+
+```{r}
+tab <- joined |> 
+  slice_max(users_rated, n = 15) |> 
+  mutate(players = str_c(minplayers, " - ", maxplayers)) |> 
+  select(thumbnail, name, yearpublished, players, 
+         playingtime, average) |> 
+  arrange(yearpublished) |> 
+  gt() |> 
+  data_color(columns = average,
+             colors = scales::col_numeric(
+               palette = 
+                 c(paletteer::paletteer_c("scico::acton", 2, direction = -1)),
+               domain = c(7, 8.5))) |> 
+  text_transform(
+    locations = cells_body(thumbnail),
+    fn = function(x) {
+      web_image(
+        url = x
+      )}) |> 
+  cols_align(
+    align = c("center"),
+    columns = c(everything())
+  ) |> 
+  tab_header(
+    title = "Popular boardgames",
+    subtitle = "15 most rated games on boardgamegeek.com") |> 
+  tab_source_note("Data: Board Game Geek | Table: Florian Tanner") |> 
+  cols_label(
+    name = "Game",
+    yearpublished = "Year\npublished",
+    players = "Players",
+    playingtime = "Minutes\nplaying\ntime",
+    average = "Average\nrating\n(max 10)",
+    thumbnail = "")
+
+```
+```{r}
+tab
+```
+
+
+```{r}
+gtsave(tab, "boardgames.pdf")
+```
+
+```{r}
+sessionInfo()
+```
+
+
