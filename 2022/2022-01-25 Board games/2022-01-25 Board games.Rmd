@@ -12,15 +12,7 @@ rm(list = ls())
 
 ```{r, message= FALSE, marning = FALSE, echo = FALSE}
 library(tidyverse)
-library(tidymodels)
 library(gt)
-# library(lubridate)
-# library(showtext)
-# library(ggtext)
-# sysfonts::font_add_google("Roboto")
-# showtext_auto()
-# showtext_opts(dpi = 300)
-`%nin%` <- Negate(`%in%`)
 ```
 
 ## Read data 
@@ -34,7 +26,7 @@ details <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/ti
 ## Questions
 
 * Is rating influenced by play lengths
-* How long do categories of games take? 
+* How long do different categories of games take? 
 * Best designers, best artists?
 
 ## Notes
@@ -44,7 +36,7 @@ details <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/ti
 * Maxplaytime and playtime are equal
 * reviews users posted on boardgamegeek
 
-## Playing time 
+## EDA
 
 ```{r}
 joined <- details |> 
@@ -58,7 +50,6 @@ joined |>
 ```{r}
 mean(joined$playingtime == joined$maxplaytime)
 
-
 joined |> 
   mutate(avg_time = (playingtime + minplaytime)/2) |> 
   filter(avg_time < 600) |> 
@@ -66,6 +57,7 @@ joined |>
   geom_point(alpha = 0.2)
 
 ```
+
 ```{r}
 long_games <- joined |> 
   mutate(avg_time = (playingtime + minplaytime)/2) |> 
@@ -77,6 +69,8 @@ long_games <- joined |>
 joined |> 
   filter(playingtime < 10)
 ```
+
+## Table of highly rated games
 
 ```{r}
 tab <- joined |> 
@@ -102,25 +96,27 @@ tab <- joined |>
     columns = c(everything())
   ) |> 
   tab_header(
-    title = "Popular boardgames",
-    subtitle = "15 most rated games on boardgamegeek.com") |> 
-  tab_source_note("Data: Board Game Geek | Table: Florian Tanner") |> 
+    title = md("**Popular boardgames**"),
+    subtitle = md("15 most rated games on boardgamegeek.com")) |> 
+  tab_source_note(md("**Data:** Board Game Geek | **Table:** Florian Tanner")) |> 
   cols_label(
     name = "Game",
     yearpublished = "Year\npublished",
     players = "Players",
     playingtime = "Minutes\nplaying\ntime",
     average = "Average\nrating\n(max 10)",
-    thumbnail = "")
+    thumbnail = "") 
+
 
 ```
+
 ```{r}
 tab
 ```
 
 
 ```{r}
-gtsave(tab, "boardgames.pdf")
+gtsave(tab, "boardgames.png")
 ```
 
 ```{r}
