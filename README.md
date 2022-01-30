@@ -2,6 +2,15 @@
 
 This repo contains selected [TidyTuesday](https://github.com/rfordatascience/tidytuesday) analyses. Folders include original scripts and Rmarkdown documents. See below for some graphs from the individual analyses. 
 
+
+---
+
+## 2022-01-25 Board games
+
+[Code](https://github.com/FCTanner/tidy_tuesday/blob/main/2022/2022-01-25%20Board%20games/2022-01-25-Board-games.md)
+
+![alt text](https://github.com/FCTanner/tidy_tuesday/blob/main/2022/2022-01-25%20Board%20games/boardgames.png)
+
 ---
 
 ## 2021-10-26 Ultra Trail Running
