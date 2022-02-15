@@ -2,7 +2,10 @@
 
 Use data from: 
 https://www.bls.gov/careeroutlook/2018/article/blacks-in-the-labor-force.htm (2018 article, 2016 data)
+
 https://www.bls.gov/opub/ted/2021/four-states-and-dc-had-labor-force-that-was-more-than-30-percent-african-american-in-2020.htm (2021 article, 2020 data) 
+- Percent of each state's labor force that is African American, 2020 annual averages
+
 https://github.com/rfordatascience/tidytuesday/tree/master/data/2021/2021-02-23
 
 
