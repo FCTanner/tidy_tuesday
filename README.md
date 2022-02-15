@@ -5,6 +5,14 @@ This repo contains selected [TidyTuesday](https://github.com/rfordatascience/tid
 
 ---
 
+## 2022-02-15 #DuBoisChallenge2022
+
+[Code](https://github.com/FCTanner/tidy_tuesday/blob/main/2022/2022-02-15%20%23DuBoisChallenge2022/2022-02-15--DuBoisChallenge2022.md)
+
+![alt text](https://github.com/FCTanner/tidy_tuesday/blob/main/2022/2022-02-15%20%23DuBoisChallenge2022/challenge_03.png)
+
+---
+
 ## 2022-01-25 Board games
 
 [Code](https://github.com/FCTanner/tidy_tuesday/blob/main/2022/2022-01-25%20Board%20games/2022-01-25-Board-games.md)
