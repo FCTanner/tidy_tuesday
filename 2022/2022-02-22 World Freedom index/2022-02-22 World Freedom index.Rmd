@@ -1,5 +1,7 @@
 ---
 title: "2022-02-22 	World Freedom index"
+author: Florian Tanner
+date: "`r format(Sys.time())`"
 output: github_document
 ---
 
@@ -13,12 +15,14 @@ rm(list = ls())
 
 library(tidyverse)
 library(showtext)
+library(ggflags)
+library(countrycode)
 
-sysfonts::font_add_google("Changa")
+sysfonts::font_add_google("Poppins")
 showtext_opts(dpi = 300)
 showtext_auto(enable = TRUE)
 
-font <- "Changa"
+font <- "Poppins"
 ```
 
 ```{r}
@@ -50,7 +54,8 @@ change <- freedom |>
          change_pr = PR_2020- PR_2010,
          change_cl_factor = case_when(change_cl > 0 ~ "positive",
                                    change_cl <0 ~ "negative",
-                                   change_cl == 0 ~ "neutral"))
+                                   change_cl == 0 ~ "neutral"),
+         country_code = tolower(countrycode(sourcevar = country, origin = "country.name", destination = "iso2c")))
 ```
 
 # Select countries to plot
@@ -58,7 +63,7 @@ change <- freedom |>
 Need to be the standard G8 countries + big winners and losers
 
 ```{r}
-standard_countries <- c("France", "Germany", "Italy", "Japan", "United Kingdom of Great Britain and Northern Ireland", "United States of America", "Canada", "Russian Federation")
+selected_countries <- c("France", "Germany", "Italy", "Japan", "United Kingdom of Great Britain and Northern Ireland", "United States of America", "Canada", "Russian Federation", "China", "Saudi Arabia")
 
 set.seed(123)
 
@@ -72,37 +77,67 @@ cl_diff <- change |>
   pull(country)
 ```
 
+## Theme
 
-# CL graph
+```{r}
+background <- "#E6E6EA"
+color_up <- "#C9ADA7"
+color_down <- "#4A4E69"
+neutral <- "black"
+text_dot_col <- "grey30"
 
-```{r, fig.height = 10}
-change |> 
-  filter(country %in% c(standard_countries, cl_diff)) |> 
+theme_freedom <- theme_minimal()  + 
+  theme(legend.position = "none",
+        text = element_text(family = font),
+        panel.background = element_rect(fill = background, color= background),
+        plot.background = element_rect(fill = background, color= background),
+        plot.title = element_text(hjust= 1, color = text_dot_col, size = rel(2.5)),
+        plot.subtitle = element_text(hjust= 1, color = text_dot_col),
+        plot.caption =  element_text(size = rel(0.6), color = text_dot_col)) 
+  
+```
+
+## CL graph
+
+```{r, fig.height = 6}
+p_cl <- change |> 
+  filter(country %in% c(selected_countries, cl_diff)) |> 
   mutate(country = case_when(country == "United Kingdom of Great Britain and Northern Ireland" ~ "United Kingdom",
                              country !=  "United Kingdom of Great Britain and Northern Ireland" ~ country),
          country = fct_reorder(country, CL_2020),
          ) |> 
   ggplot() +
-  geom_segment(aes(y = country, yend = country, x = CL_2010, xend = CL_2020, color = change_cl_factor), size = 3) +
-  geom_point(aes(x = CL_2010, y = country), size = 1, color = "black") +
-  geom_point(aes(x = CL_2020, y = country), size = 3, color = "black") +
+  geom_segment(aes(y = country, yend = country, x = CL_2010, xend = CL_2020, color = change_cl_factor), size = 2) +
+  geom_point(aes(x = CL_2010, y = country), size = 3, color = text_dot_col) +
+  geom_flag(aes(x = CL_2020, y = country, country = country_code)) +
+  geom_point(aes(x = CL_2020, y = country), shape = 1, size = 6, color = text_dot_col) +
+  geom_segment(aes(x = 5.5, y = 4, xend = 4, yend = 4),
+                  arrow = arrow(length = unit(0.2, "cm")), size = 1.5, color = color_up) + 
+  geom_segment(aes(x = 4.5, y = 5, xend = 6, yend = 5),
+                  arrow = arrow(length = unit(0.2, "cm")), size = 1.5, color = color_down) + 
+  geom_point(aes(x =5.5, y = 4), size = 3, color = text_dot_col) +
+  geom_point(aes(x =4.5, y = 5), size = 3, color = text_dot_col) +
+  annotate(geom = "text", x = 4.5, y = 3, label = "More liberty", family = font, color = text_dot_col) +
+  annotate(geom = "text", x = 4.49, y = 3.02, label = "More liberty", family = font, color = color_up) +
+  annotate(geom = "text", x = 5.5, y = 6, label = "Less liberty", family = font, color = text_dot_col) +
+  annotate(geom = "text", x = 5.49, y = 6.02, label = "Less liberty", family = font, color = color_down) +
   scale_x_continuous(breaks = seq(1,7,1), limits = c(1,7)) +
-  labs(x = "", y = "", title = "Civil Liberties, 2010 to 2020") +
-  theme_minimal() + 
-  theme(legend.position = "none")
+  scale_color_manual(values = c(color_up, neutral,  color_down)) +
+  labs(x = "", y = "", title = "Civil Liberties", 
+       subtitle = "Change from 2010 to 2020 - higher scores mean less liberty",
+       caption = "Rating based on Freedom of Expression and Belief, Associational and Organizational Rights, Rule of Law,\nPersonal Autonomy and Individual Rights\n\nData: UN and Freedom House | Graphic: @TannerFlorian") +
+  theme_freedom
+
+p_cl
 ```
 
-## Median change per region
+## Save
 
 ```{r}
-freedom |> 
-  filter(year %in% c(2010, 2020)) |> 
-  group_by(year, Region_Name) |> 
-  summarise(mean_cl = mean(CL))
+ggsave(filename = "civil_liberties.png", plot = p_cl, device = "png", units = "cm", height = 15, width = 13, limitsize = F, dpi = 300)
 ```
 
 
-# PR graph
 
 ```{r}
 sessionInfo()
