@@ -1,0 +1,94 @@
+---
+title: "2022-02-22 	World Freedom index"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+rm(list = ls())
+
+library(tidyverse)
+library(showtext)
+
+sysfonts::font_add_google("Changa")
+showtext_opts(dpi = 300)
+showtext_auto(enable = TRUE)
+
+font <- "Changa"
+```
+
+```{r}
+freedom <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-02-22/freedom.csv')
+```
+
+# EDA
+
+```{r}
+freedom |> skimr::skim()
+
+table(freedom$year)
+```
+
+```{r}
+change <- freedom |> 
+  filter(year %in% c(2010, 2020)) |> 
+  pivot_wider(id_cols = c(country, Region_Name), values_from = c(CL, PR), names_from = year) |> 
+  mutate(change_cl = CL_2020 - CL_2010,
+         change_pr = PR_2020- PR_2010,
+         change_cl_factor = case_when(change_cl > 0 ~ "positive",
+                                   change_cl <0 ~ "negative",
+                                   change_cl == 0 ~ "neutral"))
+```
+
+# Select countries to plot
+
+Need to be the standard G8 countries + big winners and losers
+
+```{r}
+standard_countries <- c("France", "Germany", "Italy", "Japan", "United Kingdom of Great Britain and Northern Ireland", "United States of America", "Canada", "Russian Federation")
+```
+
+
+# CL graph
+
+```{r, fig.height = 10}
+change |> 
+  filter(country %in% standard_countries) |> 
+  mutate(country = fct_reorder(country, CL_2020)) |> 
+  ggplot() +
+  geom_segment(aes(y = country, yend = country, x = CL_2010, xend = CL_2020, color = change_cl_factor)) +
+  geom_point(aes(x = CL_2010, y = country), size = 1, color = "black") +
+  geom_point(aes(x = CL_2020, y = country), size = 3, color = "black") +
+  scale_x_continuous(breaks = seq(1,7,1), limits = c(1,7)) +
+  labs(x = "", y = "", title = "Civil Liberties, 2010 to 2020") +
+  theme_minimal() + 
+  theme(legend.position = "none")
+```
+
+# PR graph
+
+```{r}
+sessionInfo()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
