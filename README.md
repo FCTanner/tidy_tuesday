@@ -2,6 +2,13 @@
 
 This repo contains selected [TidyTuesday](https://github.com/rfordatascience/tidytuesday) analyses. Folders include original scripts and Rmarkdown documents. See below for some graphs from the individual analyses. 
 
+---
+
+## 2022-02-22 World Freedom index
+
+[Code](https://github.com/FCTanner/tidy_tuesday/blob/main/2022/2022-02-22%20World%20Freedom%20index/2022-02-22-World-Freedom-index.md)
+
+![alt text](https://github.com/FCTanner/tidy_tuesday/blob/main/2022/2022-02-22%20World%20Freedom%20index/civil_liberties.png)
 
 ---
 
