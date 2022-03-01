@@ -1,0 +1,78 @@
+---
+title: "Alternative Fuel Stations"
+author: "Florian Tanner"
+output: 
+  flexdashboard::flex_dashboard:
+    theme: journal
+    social: menu
+    source_code: embed
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(leaflet)
+library(tidyverse)
+```
+
+```{r}
+stations <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-03-01/stations.csv') 
+```
+
+```{r}
+cols <- c("#1be7ff", "#6eeb83", "#e4ff1a", "#ffb800", "#ff5714", "#037971", "#023436")
+```
+
+```{r}
+public_access <- stations |>  
+  janitor::clean_names() |> 
+  filter(access_code == "public")  |> 
+  mutate(fuel_type= case_when(fuel_type_code == "ELEC" ~ "Electric",
+                              fuel_type_code == "BD" ~ "Biodiesel (B20 and above)",
+                              fuel_type_code == "CNG" ~ "Compressed Natural Gas (CNG)",
+                              fuel_type_code == "E85" ~ "Ethanol (E85)",
+                              fuel_type_code == "HY" ~ "Hydrogen",
+                              fuel_type_code == "LNG" ~ "Liquefied Natural Gas (LNG)",
+                              fuel_type_code == "LPG" ~ "Propane (LPG)"),
+         fuel_type = as.factor(fuel_type),
+         fuel_color = case_when(fuel_type_code == "ELEC" ~ cols[1],
+                              fuel_type_code == "BD" ~ cols[2],
+                              fuel_type_code == "CNG" ~ cols[3],
+                              fuel_type_code == "E85" ~ cols[4],
+                              fuel_type_code == "HY" ~ cols[5],
+                              fuel_type_code == "LNG" ~ cols[6],
+                              fuel_type_code == "LPG" ~ cols[7]))
+  
+```
+
+
+
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Chart A
+
+```{r}
+leaflet() %>% 
+  addTiles() %>% 
+  fitBounds(-127.44,24.05,-65.30,50.35) %>% 
+  addCircleMarkers(public_access$x, 
+                   public_access$y, 
+                   color = public_access$fuel_color, 
+                   radius = 5, 
+                   fill = T,
+                   fillOpacity = 0.2,
+                   opacity = 0.4,
+                   popup = paste(public_access$station_name,
+                                 public_access$street_address, 
+                                 sep = " ")) %>%
+  addLegend("bottomleft", 
+            colors = cols,
+            labels = unique(public_access$fuel_type),
+            opacity = 0.8)
+```
+
+
+
+
+

@@ -1,0 +1,145 @@
+---
+title: " 2022-03-01 Alternative Fuel Stations"
+author: Florian Tanner
+date: "`r format(Sys.time())`"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+rm(list = ls())
+
+library(tidyverse)
+library(ggmap)
+
+library(gganimate)
+
+library(showtext)
+
+sysfonts::font_add_google("Poppins")
+showtext_opts(dpi = 300)
+showtext_auto(enable = TRUE)
+
+font <- "Poppins"
+```
+
+# Read data
+
+```{r}
+stations <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-03-01/stations.csv') 
+```
+
+# Ideas 
+
+* For each state, what is the availability of alternative fuel stations
+* Density
+* Average distance to stations
+* Adjust for population? Adjust for size of the state?
+
+# Notes
+
+* Need to filter for 
+  * access_code == "public"
+
+* cng_renewable_source + lng_renewable_source + ev_renewable_source
+  * This is interesting: How many stations can do it? 
+  
+* Vast majority of stations is for electric
+  
+ group by city or state?
+
+# EDA
+
+```{r}
+public_access <- stations |>  
+  janitor::clean_names() |> 
+  filter(access_code == "public") |> 
+  mutate(fuel_type= case_when(fuel_type_code == "ELEC" ~ "Electric",
+                              fuel_type_code == "BD" ~ "Biodiesel (B20 and above)",
+                              fuel_type_code == "CNG" ~ "Compressed Natural Gas (CNG)",
+                              fuel_type_code == "E85" ~ "Ethanol (E85)",
+                              fuel_type_code == "HY" ~ "Hydrogen",
+                              fuel_type_code == "LNG" ~ "Liquefied Natural Gas (LNG)",
+                              fuel_type_code == "LPG" ~ "Propane (LPG)"))
+```
+
+
+How many are planned / expected?
+
+```{r}
+table(public_access$status_code)
+table(public_access$fuel_type_code)
+```
+
+
+# Maps of individual station
+
+```{r}
+us_loc <- c(left = -125, bottom = 25, right = -65, top = 49)
+us <- get_stamenmap(bbox= us_loc, source="stamen", maptype="toner-lite", crop=FALSE, zoom = 6)
+```
+
+
+```{r}
+p_static <- ggmap(us) + 
+  geom_point(data = public_access, aes(x = x, y =y, color = fuel_type_code), size = 0.2)+ 
+  ggsci::scale_color_aaas() + 
+  facet_wrap(~fuel_type) +
+  theme_void() +
+  theme(legend.position = "none")
+```
+
+
+```{r}
+ggsave(plot = p_static, filename = "test.png", units = "cm", height = 20, width= 20, limitsize = F, dpi = 600 )
+```
+
+# Gif
+
+```{r}
+
+
+p_animate <- ggmap(us) + 
+  geom_point(data = public_access, aes(x = x, y =y, color = fuel_type), size = 0.2)+ 
+  ggsci::scale_color_aaas() + 
+  theme_void() +
+  theme(legend.position = "none") +
+  transition_states(fuel_type) + 
+  ggtitle("{closest_state}") 
+
+p_animation <- animate(p_animate, nframes = 7, fps = 0.5,  height = 12, width = 14, units = "cm", res = 300) 
+anim_save("fuels.gif")
+
+```
+
+
+
+# Shiny 
+
+
+
+```{r}
+sessionInfo()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
