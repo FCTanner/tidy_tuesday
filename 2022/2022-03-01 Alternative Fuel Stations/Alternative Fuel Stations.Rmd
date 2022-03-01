@@ -19,7 +19,7 @@ stations <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/t
 ```
 
 ```{r}
-cols <- c("#1be7ff", "#6eeb83", "#e4ff1a", "#ffb800", "#ff5714", "#037971", "#023436")
+cols <- ggsci::pal_igv("default")(7)
 ```
 
 ```{r}
@@ -33,17 +33,27 @@ public_access <- stations |>
                               fuel_type_code == "HY" ~ "Hydrogen",
                               fuel_type_code == "LNG" ~ "Liquefied Natural Gas (LNG)",
                               fuel_type_code == "LPG" ~ "Propane (LPG)"),
-         fuel_type = as.factor(fuel_type),
-         fuel_color = case_when(fuel_type_code == "ELEC" ~ cols[1],
-                              fuel_type_code == "BD" ~ cols[2],
+         fuel_type = factor(fuel_type, levels = c("Electric", "Ethanol (E85)","Propane (LPG)", "Compressed Natural Gas (CNG)",
+                                                     "Biodiesel (B20 and above)","Hydrogen","Liquefied Natural Gas (LNG)")),
+         fuel_color = case_when(fuel_type_code == "ELEC" ~ cols[4],
+                              fuel_type_code == "BD" ~ cols[1],
                               fuel_type_code == "CNG" ~ cols[3],
-                              fuel_type_code == "E85" ~ cols[4],
+                              fuel_type_code == "E85" ~ cols[2],
                               fuel_type_code == "HY" ~ cols[5],
                               fuel_type_code == "LNG" ~ cols[6],
                               fuel_type_code == "LPG" ~ cols[7]))
   
 ```
 
+
+```{r}
+vectors <- public_access |> 
+  select(fuel_color, fuel_type) |> 
+  distinct()
+
+color_vector <- vectors$fuel_color
+label_vector <- as.character(unique(vectors$fuel_type))
+```
 
 
 
@@ -59,20 +69,34 @@ leaflet() %>%
   addCircleMarkers(public_access$x, 
                    public_access$y, 
                    color = public_access$fuel_color, 
-                   radius = 5, 
+                   radius = 4, 
                    fill = T,
-                   fillOpacity = 0.2,
-                   opacity = 0.4,
+                   fillOpacity = 0.05,
+                   opacity = 0.6,
                    popup = paste(public_access$station_name,
                                  public_access$street_address, 
+                                 public_access$fuel_type,
                                  sep = " ")) %>%
   addLegend("bottomleft", 
-            colors = cols,
-            labels = unique(public_access$fuel_type),
+            colors = color_vector,
+            labels = label_vector,
             opacity = 0.8)
 ```
 
+Column {data-width=350}
+-----------------------------------------------------------------------
 
+### Number of stations
+
+```{r}
+
+```
+
+### Electric 
+
+```{r}
+
+```
 
 
 
