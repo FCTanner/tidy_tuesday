@@ -1,0 +1,137 @@
+---
+title: "Alternative Fuel Stations"
+author: "Data: United States Department of Transportation | Visualization: Florian Tanner"
+output: 
+  flexdashboard::flex_dashboard:
+    theme: journal
+    social: menu
+    source_code: embed
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(leaflet)
+library(tidyverse)
+```
+
+```{r}
+stations <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-03-01/stations.csv') 
+```
+
+```{r}
+cols <- ggsci::pal_jama("default")(6)
+```
+
+```{r}
+public_access <- stations |>  
+  janitor::clean_names() |> 
+  filter(access_code == "public")  |> 
+  mutate(fuel_type= case_when(fuel_type_code == "BD" ~ "Biodiesel (B20 and above)",
+                              fuel_type_code == "CNG" ~ "Compressed Natural Gas (CNG)",
+                              fuel_type_code == "E85" ~ "Ethanol (E85)",
+                              fuel_type_code == "HY" ~ "Hydrogen",
+                              fuel_type_code == "LNG" ~ "Liquefied Natural Gas (LNG)",
+                              fuel_type_code == "LPG" ~ "Propane (LPG)",
+                              fuel_type_code == "ELEC" ~ "Electric"))
+
+map_dat <- public_access |> 
+  filter(fuel_type_code != "ELEC") |> 
+  mutate(fuel_type = factor(fuel_type, levels = c("Ethanol (E85)","Propane (LPG)", "Compressed Natural Gas (CNG)",
+                                                     "Biodiesel (B20 and above)","Hydrogen","Liquefied Natural Gas (LNG)")),
+         fuel_color = case_when(fuel_type_code == "BD" ~ cols[1],
+                              fuel_type_code == "CNG" ~ cols[3],
+                              fuel_type_code == "E85" ~ cols[5],
+                              fuel_type_code == "HY" ~ cols[2],
+                              fuel_type_code == "LNG" ~ cols[6],
+                              fuel_type_code == "LPG" ~ cols[4]))
+  
+```
+
+
+```{r}
+vectors <- map_dat |> 
+  select(fuel_color, fuel_type) |> 
+  distinct()
+
+color_vector <- vectors$fuel_color
+label_vector <- as.character(unique(vectors$fuel_type))
+```
+
+
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Providers of alternative fuels
+
+```{r}
+leaflet() %>% 
+  addTiles() %>% 
+  fitBounds(-127.44,24.05,-65.30,50.35) %>% 
+  addCircleMarkers(map_dat$x, 
+                   map_dat$y, 
+                   color = map_dat$fuel_color, 
+                   radius = 4, 
+                   fill = T,
+                   fillOpacity = 0.05,
+                   opacity = 0.6,
+                   popup = paste(map_dat$station_name,
+                                 map_dat$street_address, 
+                                 map_dat$fuel_type,
+                                 sep = " ")) %>%
+  addLegend("bottomleft", 
+            colors = color_vector,
+            labels = label_vector,
+            opacity = 0.8)
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Total number of stations (log scale)
+
+```{r}
+bar_cols <- c("BD" = cols[1],"CNG" = cols[3],"E85" = cols[5],"HY" = cols[2], "LNG" = cols[6], "LPG" = cols[4], "ELEC" = "grey50")
+```
+
+
+```{r}
+public_access |> 
+  group_by(fuel_type, fuel_type_code) |> 
+  summarise(n = n()) |> 
+  ggplot(aes(y = reorder(fuel_type, n), x = n, fill = fuel_type_code)) +
+  geom_col(width = 0.7) +
+  geom_text(aes(label = n), hjust = 1, nudge_x = -.3) +
+  scale_x_log10() + 
+  scale_fill_manual(values = bar_cols) + 
+  # labs(x= "Total number of stations (log scale)") +
+  theme_minimal() +
+  theme(axis.title.y = element_blank(),
+        legend.position = "none",
+        axis.title.x = element_blank())
+```
+
+### Electric 
+
+```{r}
+public_access_electric <- public_access |> 
+  filter(fuel_type_code == "ELEC")  |> 
+  mutate(fuel_type= "Electric")
+```
+
+
+```{r}
+leaflet() %>% 
+  addTiles() %>% 
+  fitBounds(-127.44,24.05,-65.30,50.35) %>% 
+  addCircleMarkers(public_access_electric$x, 
+                   public_access_electric$y, 
+                   color ="grey50",
+                   radius = 4, 
+                   fill = T,
+                   fillOpacity = 0.1,
+                   opacity = 0.05)
+```
+
+
+
