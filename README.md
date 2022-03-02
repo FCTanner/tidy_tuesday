@@ -4,6 +4,15 @@ This repo contains selected [TidyTuesday](https://github.com/rfordatascience/tid
 
 ---
 
+## 2022-03-01 Alternative Fuel Stations
+
+This week I made a static visualization and a [dashboard](https://fctanner.github.io/fuel_dashboard/).
+
+[Code](https://github.com/FCTanner/tidy_tuesday/blob/main/2022/2022-03-01%20Alternative%20Fuel%20Stations/2022-03-01-Alternative-Fuel-Stations.md)
+
+![alt text](https://github.com/FCTanner/tidy_tuesday/blob/main/2022/2022-03-01%20Alternative%20Fuel%20Stations/static_title.png)
+
+
 ## 2022-02-22 World Freedom index
 
 [Code](https://github.com/FCTanner/tidy_tuesday/blob/main/2022/2022-02-22%20World%20Freedom%20index/2022-02-22-World-Freedom-index.md)
