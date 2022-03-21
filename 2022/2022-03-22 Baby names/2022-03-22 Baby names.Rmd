@@ -1,0 +1,136 @@
+---
+title: "2022-03-22 Baby names"
+author: Florian Tanner
+date: "`r format(Sys.time())`"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+rm(list = ls())
+
+library(tidyverse)
+library(showtext)
+library(gt)
+library(gtExtras)
+library(patchwork)
+
+showtext_opts(dpi = 300)
+showtext_auto(enable = TRUE)
+```
+
+```{r}
+font <- "Oooh Baby"
+font <- "Pacifico"
+font <- "Hurricane"
+sysfonts::font_add_google(font)
+```
+
+
+```{r}
+babynames <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-03-22/babynames.csv')
+```
+
+# EDA
+
+## Summaries
+
+```{r}
+babynames |> 
+  group_by(year, sex) |> 
+  summarise(n_babies = sum(n)) |> 
+  ggplot(aes(x= year, y = n_babies, color = sex, group= sex)) +
+  geom_line()
+```
+```{r}
+top_m_2010s <- babynames |> 
+  filter(year >= 2010,
+         sex == "M") |> 
+  group_by(name) |> 
+  summarise(prop_2010s = mean(prop)) |> 
+  slice_max(order_by = prop_2010s, n = 15) |> 
+  pull(name)
+
+top_f_2010s <- babynames |> 
+  filter(year >= 2010,
+         sex == "F") |> 
+    group_by(name) |> 
+  summarise(prop_2010s = mean(prop)) |> 
+  slice_max(order_by = prop_2010s, n = 15) |> 
+  pull(name)
+```
+
+```{r}
+m_summary <- babynames |> 
+  filter(year >= 2010,
+         name %in% top_m_2010s,
+         sex == "M") |> 
+  group_by(name) |> 
+  summarise(mean_n = round(mean(n), 0),
+            n_dat = list(n)) |> 
+  ungroup()
+
+f_summary <- babynames |> 
+  filter(year >= 2010,
+         name %in% top_f_2010s,
+         sex == "F") |> 
+  group_by(name) |> 
+  summarise(mean_n = round(mean(n), 0),
+            n_dat = list(n)) |> 
+  ungroup()
+```
+
+```{r}
+title = "The most popular baby names of the 2010s"
+
+```
+
+
+```{r}
+table_m <- m_summary |> 
+  arrange(desc(mean_n)) |> 
+  gt() |> 
+  gt_sparkline(n_dat) |> 
+  cols_label(name = "Name",mean_n = "Average", n_dat = "2010-2017") |> 
+  gt_theme_guardian()
+
+table_f <- f_summary |> 
+  arrange(desc(mean_n)) |> 
+  gt() |> 
+  gt_sparkline(n_dat) |> 
+  cols_label(name = "Name",mean_n = "Average", n_dat = "2010-2017") |> 
+  gt_theme_guardian()
+
+```
+
+```{r}
+table <- table_f + table_m
+```
+
+
+
+```{r}
+sessionInfo()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
