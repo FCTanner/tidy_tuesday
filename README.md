@@ -4,6 +4,14 @@ This repo contains selected [TidyTuesday](https://github.com/rfordatascience/tid
 
 ---
 
+## 2022-03-22 Baby Names
+
+[Code](https://github.com/FCTanner/tidy_tuesday/blob/main/2022/2022-03-22%20Baby%20names/2022-03-22-Baby-names.md)
+
+![alt text](https://github.com/FCTanner/tidy_tuesday/blob/main/2022/2022-03-22%20Baby%20names/millennials_names.png)
+
+---
+
 ## 2022-03-01 Alternative Fuel Stations
 
 This week I made a static visualization and a [dashboard](https://fctanner.github.io/fuel_dashboard/).
