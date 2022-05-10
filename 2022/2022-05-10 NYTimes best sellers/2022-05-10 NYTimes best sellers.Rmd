@@ -1,0 +1,106 @@
+---
+title: "2022-05-10 NYTimes best sellers"
+author: Florian Tanner
+date: "`r format(Sys.time())`"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+rm(list = ls())
+
+library(tidyverse)
+library(ggtext)
+sysfonts::font_add_google("Gentium Book Basic")
+showtext::showtext_auto()
+showtext::showtext_opts(dpi = 300)
+```
+
+```{r}
+nyt_titles <- readr::read_tsv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-05-10/nyt_titles.tsv')
+nyt_full <- readr::read_tsv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-05-10/nyt_full.tsv')
+```
+
+```{r}
+theme_bestsellers <-
+  theme_minimal() +
+  theme(axis.line.x = element_line(), 
+        axis.ticks.x = element_line(colour = "grey20"),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid = element_blank(),
+        axis.title.x = element_blank(),
+        legend.position = "none",
+        plot.caption =element_textbox_simple( padding = margin(5.5, 5.5, 5.5, 5.5),
+                                              margin = margin(5, 0, 0, 0)),
+        text = element_text(family = "Gentium Book Basic"),
+        plot.title = element_text(size = 26))
+```
+
+
+# EDA
+
+```{r}
+n_titles <- 10
+
+date_breaks_monthly <- as.Date(c("2020-01-01", "2020-03-01", "2020-05-01", "2020-07-01", "2020-09-01", "2020-11-01", "2021-01-01"))
+
+p <- nyt_titles |> 
+  filter(year == 2020) |> 
+  slice_max(order_by = total_weeks, n = n_titles, with_ties = FALSE) |> 
+  mutate(title_titlecase = str_to_title(title),
+         last_week = first_week + total_weeks*7,
+         rank_that_year = n_titles + 1 - row_number(),
+         best_label = paste(total_weeks, " weeks: **", title_titlecase, "** by ", author, sep = "")) |> 
+  ggplot(aes(x = first_week, y = rank_that_year, color = rank_that_year)) +
+  geom_textbox(aes(x = first_week, y = rank_that_year + 0.35, label = best_label), 
+                       hjust = 0,
+                       color = "black",
+                       width =1, 
+                       box.colour = NA,
+                       box.size = NA,
+               family = "Gentium Book Basic") +
+  geom_segment(aes(x = first_week, xend = last_week, y = rank_that_year, yend = rank_that_year),
+               size =2) +
+  geom_point(size =2.5, shape = 15) +
+  geom_point(aes(x = last_week, y = rank_that_year), size =2.5, shape = 15) +
+  scale_x_date(limits = c(as.Date("2020-01-01"), as.Date("2021-06-01")),
+               date_labels = "%B",
+               breaks = date_breaks_monthly)  +
+  scale_color_gradient(low = "#98C1D9", high = "#3D5A80") +
+  labs(title = "New York Times Best Sellers in 2020", 
+       caption = "**Data:** NYT via Post45 Data Collective | **Graphic:** @TannerFlorian") +
+  theme_bestsellers
+  
+p
+```
+```{r}
+ggsave(plot = p, filename = "nyt.jpg", units = "cm", device = "jpg", width = 12, height = 8, dpi = 300, scale = 1.45)
+```
+
+
+```{r}
+sessionInfo()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
