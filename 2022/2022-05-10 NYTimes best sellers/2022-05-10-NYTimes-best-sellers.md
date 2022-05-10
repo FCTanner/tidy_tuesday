@@ -1,7 +1,7 @@
 2022-05-10 NYTimes best sellers
 ================
 Florian Tanner
-2022-05-10 23:02:14
+2022-05-10 23:33:35
 
 ``` r
 rm(list = ls())
@@ -102,7 +102,7 @@ p <- nyt_titles |>
                breaks = date_breaks_monthly)  +
   scale_color_gradient(low = "#98C1D9", high = "#3D5A80") +
   labs(title = "New York Times Best Sellers in 2020", 
-       caption = "**Data:** NYT via Post45 Data Collective | **Graphic:** @TannerFlorian") +
+       caption = "Length of stay in the Best Seller list, Top 10 books are shown <br>**Data:** NYT via Post45 Data Collective | **Graphic:** @TannerFlorian") +
   theme_bestsellers
   
 p
