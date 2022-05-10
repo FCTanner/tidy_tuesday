@@ -4,6 +4,14 @@ This repo contains selected [TidyTuesday](https://github.com/rfordatascience/tid
 
 ---
 
+## 2022-05-10 NYTimes Best Sellers
+
+[Code](https://github.com/FCTanner/tidy_tuesday/blob/main/2022/2022-05-10%20NYTimes%20best%20sellers/2022-05-10-NYTimes-best-sellers.md)
+
+![alt text](https://github.com/FCTanner/tidy_tuesday/blob/main/2022/2022-05-10%20NYTimes%20best%20sellers/nyt.jpg)
+
+---
+
 ## 2022-03-22 Baby Names
 
 [Code](https://github.com/FCTanner/tidy_tuesday/blob/main/2022/2022-03-22%20Baby%20names/2022-03-22-Baby-names.md)
