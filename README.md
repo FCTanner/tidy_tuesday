@@ -4,6 +4,15 @@ This repo contains selected [TidyTuesday](https://github.com/rfordatascience/tid
 
 ---
 
+## 2022-08-23 CHIP dataset
+
+[Code](https://github.com/FCTanner/tidy_tuesday/blob/main/2022/2022-08-23%20CHIP%20dataset/2022-08-23-CHIP-dataset.md)
+
+![alt text](https://github.com/FCTanner/tidy_tuesday/blob/main/2022/2022-08-23%20CHIP%20dataset/large.png)
+
+---
+
+
 ## 2022-05-10 NYTimes Best Sellers
 
 [Code](https://github.com/FCTanner/tidy_tuesday/blob/main/2022/2022-05-10%20NYTimes%20best%20sellers/2022-05-10-NYTimes-best-sellers.md)
