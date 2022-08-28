@@ -1,7 +1,7 @@
 2022-08-23 CHIP dataset
 ================
 Florian Tanner
-2022-08-26 14:23:30
+2022-08-26 15:48:07
 
 ``` r
 rm(list = ls())
@@ -75,20 +75,26 @@ data <- chips_full |>
 
 ``` r
 theme_nvidia <- 
-  theme_bw(base_size = 30, base_family = "Roboto Condensed") +
+  theme_bw(base_size = 40, base_family = "Roboto Condensed") +
   theme(panel.background = element_rect(fill = "#76b900", color = "#76b900"),
         panel.grid = element_blank(),
         plot.background = element_rect(fill = "#76b900", color = "#76b900"),
-        axis.title.x = element_blank(),
+        axis.title.x = element_text(family = "Roboto Condensed"),
         axis.title.y = element_text(family = "Roboto Condensed"),
         plot.title = element_blank(),
+        plot.caption =element_textbox_simple(size = 22 ,lineheight = 1.2,
+                                             padding = margin(5.5, 5.5, 5.5, 5.5),
+                                             margin = margin(25, 0, 0, 0),
+                                             maxheight = NULL),
         legend.position = "none") 
 
 nvidia_scheme <- c("#F5F5F5", "#B3CAE7", "#7598C1")
 ```
 
 ``` r
-nvidia_title <- "GPU performance<br><br><span style = 'color: #F5F5F5;font-weight:bold;'>GT</span>, <span style = 'color: #B3CAE7;font-weight:bold;'>GTX</span> and<br><span style = 'color: #7598C1;font-weight:bold;'>RTX</span> series"
+nvidia_title <- "FP32 GPU performance of <span style = 'color: #F5F5F5;font-weight:bold;'>GT</span>,<br><span style = 'color: #B3CAE7;font-weight:bold;'>GTX</span> and <span style = 'color: #7598C1;font-weight:bold;'>RTX</span> series has doubled<br>approximately every two years"
+
+nvidia_caption <-  "Data: Sun, Yifan, et al. Summarizing CPU and GPU design trends with product data. arXiv preprint arXiv:1911.11313 (2019). | Graphic: @TannerFlorian"
 ```
 
 ``` r
@@ -104,9 +110,9 @@ p <- data |>
   scale_x_date(limits = as.Date(c("2006-01-01", "2022-01-01"))) +
   scale_y_log10() +
   geom_richtext(aes(x = as.Date("2006-01-01"), y = 20000, label = nvidia_title),
-                fill = NA, label.color = NA, size = 30, hjust = 0, color = "black",
-                family = "Roboto Condensed", fontface= "bold") +
-  labs(y = "FP32 GFLOPS, log scale", caption= "Data: Sun, Yifan, et al. Summarizing CPU and GPU design trends with product data. arXiv preprint arXiv:1911.11313 (2019). | Graphic: @TannerFlorian")
+                fill = NA, label.color = NA, size = 23, hjust = 0, color = "black",
+                family = "Roboto Condensed", fontface= "bold", lineheight =1.3) +
+  labs(y = "FP32 GFLOPS, log scale", x = "Release date", caption= nvidia_caption)
 
 
 
@@ -118,6 +124,18 @@ p <- p +
 ```
 
 ``` r
+gt_gtx_rtx_gr <-data |> 
+  filter(product_line != "other") |> 
+  group_by(year) |> 
+  summarise(mean_yearly_fp32_gflops = mean(fp32_gflops, na.rm = T)) |> 
+  filter(is.numeric(mean_yearly_fp32_gflops)) |> 
+  mutate(ann_growth = (lead(mean_yearly_fp32_gflops) - mean_yearly_fp32_gflops)/mean_yearly_fp32_gflops) |> 
+  summarise(mean_gr = mean(ann_growth, na.rm = T)) |> 
+  ungroup() |> 
+  mutate(mean_doubling_time = log(2)/log(1+mean_gr))
+```
+
+``` r
 ggsave(plot = p, filename = "large.png", units = "cm", width = 60, height = 60, limitsize = F, device = "png")
 ```
 
@@ -126,7 +144,7 @@ ggsave(plot = p, filename = "large.png", units = "cm", width = 60, height = 60, 
 
     ## Warning: Removed 28 rows containing missing values (geom_label_repel).
 
-    ## Warning: ggrepel: 67 unlabeled data points (too many overlaps). Consider
+    ## Warning: ggrepel: 82 unlabeled data points (too many overlaps). Consider
     ## increasing max.overlaps
 
 ``` r
