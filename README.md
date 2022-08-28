@@ -6,9 +6,11 @@ This repo contains selected [TidyTuesday](https://github.com/rfordatascience/tid
 
 ## 2022-08-23 CHIP dataset
 
+Data is available from https://chip-dataset.vercel.app/
 [Code](https://github.com/FCTanner/tidy_tuesday/blob/main/2022/2022-08-23%20CHIP%20dataset/2022-08-23-CHIP-dataset.md)
 
 ![alt text](https://github.com/FCTanner/tidy_tuesday/blob/main/2022/2022-08-23%20CHIP%20dataset/large.png)
+
 
 ---
 

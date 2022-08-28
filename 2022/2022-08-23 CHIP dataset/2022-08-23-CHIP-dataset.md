@@ -1,7 +1,7 @@
 2022-08-23 CHIP dataset
 ================
 Florian Tanner
-2022-08-26 15:48:07
+2022-08-29 08:44:58
 
 ``` r
 rm(list = ls())
@@ -92,7 +92,7 @@ nvidia_scheme <- c("#F5F5F5", "#B3CAE7", "#7598C1")
 ```
 
 ``` r
-nvidia_title <- "FP32 GPU performance of <span style = 'color: #F5F5F5;font-weight:bold;'>GT</span>,<br><span style = 'color: #B3CAE7;font-weight:bold;'>GTX</span> and <span style = 'color: #7598C1;font-weight:bold;'>RTX</span> series has doubled<br>approximately every two years"
+nvidia_title <- "The performance of <span style = 'color: #F5F5F5;font-weight:bold;'>GT</span>, <span style = 'color: #B3CAE7;font-weight:bold;'>GTX</span> and <br><span style = 'color: #7598C1;font-weight:bold;'>RTX</span> series GPUs has doubled<br>approximately every two years"
 
 nvidia_caption <-  "Data: Sun, Yifan, et al. Summarizing CPU and GPU design trends with product data. arXiv preprint arXiv:1911.11313 (2019). | Graphic: @TannerFlorian"
 ```
